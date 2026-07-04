@@ -1672,8 +1672,21 @@ select.field-input { cursor: pointer; }
         <button class="toggle-card-btn" id="toggle-btn-bidders-list-card">إخفاء ▲</button>
       </div>
       <div id="toggle-body-bidders-list-card">
+        <!-- حقل البحث -->
+        <div style="position:relative;margin-bottom:12px">
+          <input class="field-input" id="bidders-search" type="text"
+            placeholder="🔍 ابحث بالاسم أو رقم الهاتف..."
+            oninput="filterBiddersList(this.value)"
+            style="padding-right:36px;border-color:rgba(58,107,74,0.2)">
+          <span id="bidders-search-clear" onclick="clearBiddersSearch()"
+            style="display:none;position:absolute;left:10px;top:50%;transform:translateY(-50%);
+                   cursor:pointer;font-size:16px;color:var(--text-muted)">✕</span>
+        </div>
         <div id="bidders-list">
           <div class="empty-state">لا يوجد مزايدون مسجّلون بعد</div>
+        </div>
+        <div id="bidders-no-result" class="empty-state" style="display:none">
+          لا توجد نتائج مطابقة
         </div>
       </div>
     </div>
@@ -1829,10 +1842,16 @@ select.field-input { cursor: pointer; }
         </div>
       </div>
       <div class="field">
-        <label class="field-label">تصفية حسب المزايد</label>
-        <select class="field-input" id="search-fin-name" onchange="selectedFinanceKeys.clear(); loadFinanceData()">
-          <option value="">— عرض الجميع —</option>
-        </select>
+        <label class="field-label">بحث حسب المزايد</label>
+        <div style="position:relative">
+          <input class="field-input" id="search-fin-name" type="text"
+            placeholder="🔍 ابحث بالاسم..."
+            oninput="selectedFinanceKeys.clear(); loadFinanceData()"
+            style="padding-right:36px">
+          <span onclick="clearFinanceSearch()"
+            style="position:absolute;left:10px;top:50%;transform:translateY(-50%);
+                   cursor:pointer;font-size:16px;color:var(--text-muted)">✕</span>
+        </div>
       </div>
       <div id="finance-summary" class="fin-summary" style="display:none"></div>
     </div>
@@ -3005,32 +3024,22 @@ window.adminNewDay = async function() {
 function loadBiddersList() {
   if (!biddersRef) return;
   biddersRef.on('value', snap => {
-    const data = snap.val();
-    const list = document.getElementById('bidders-list');
+    const data    = snap.val();
+    const list    = document.getElementById('bidders-list');
     const countEl = document.getElementById('bidders-count');
     if (!list) return;
+
+    allBiddersData = data || {};
+    if (countEl) countEl.textContent = Object.keys(allBiddersData).length;
+
     if (!data) {
       list.innerHTML = '<div class="empty-state">لا يوجد مزايدون مسجّلون</div>';
-      if (countEl) countEl.textContent = '0';
       return;
     }
-    const entries = Object.entries(data);
-    if (countEl) countEl.textContent = entries.length;
-    list.innerHTML = entries.map(([key, b]) => {
-      const initials = (b.name||'?').trim().split(' ').map(w=>w[0]).slice(0,2).join('');
-      const online   = b.isOnline ? '<span class="online-badge"></span>' : '';
-      return `<div class="bidder-item">
-        <div class="bidder-avatar">${initials}</div>
-        <div style="flex:1">
-          <div class="bidder-name">${online}${b.name||'—'}</div>
-          <div class="bidder-phone">${b.phone||key}</div>
-        </div>
-        <div class="bidder-actions">
-          <button class="bidder-edit" onclick="openEditBidder('${key}')">✏️</button>
-          <button class="bidder-delete" onclick="deleteBidder('${key}','${(b.name||'').replace(/'/g,'`')}')">🗑️</button>
-        </div>
-      </div>`;
-    }).join('') || '<div class="empty-state">لا يوجد مزايدون</div>';
+
+    // تطبيق الفلتر الحالي إن وُجد
+    const q = (document.getElementById('bidders-search')?.value || '').trim();
+    filterBiddersList(q);
   });
 }
 
@@ -3223,7 +3232,7 @@ function saveQuickBids() {
 
 /* ══════════════ FINANCE ══════════════ */
 function loadFinanceData() {
-  const selectedName = document.getElementById('search-fin-name').value;
+  const searchVal = (document.getElementById('search-fin-name').value || '').trim().toLowerCase();
   const body    = document.getElementById('finance-body');
   const summary = document.getElementById('finance-summary');
   if (!db || !body) return;
@@ -3244,11 +3253,12 @@ function loadFinanceData() {
     updateBiddersList(active);
 
     let html = '', totalRemaining = 0;
-    financeRowsData = {}; // إعادة بناء مخزن السجلات الظاهرة
+    financeRowsData = {};
 
     Object.entries(active).forEach(([key, item]) => {
       if (!item.winner) return;
-      if (selectedName && item.winner !== selectedName) return;
+      // بحث نصي جزئي — يتطابق مع أي جزء من الاسم
+      if (searchVal && !item.winner.toLowerCase().includes(searchVal)) return;
 
       const amount    = Number(item.amount||0);
       const paid      = Number(item.paidAmount||0);
@@ -3261,7 +3271,6 @@ function loadFinanceData() {
         ? '<span style="font-size:10px;background:#dff0f9;color:var(--water);border-radius:8px;padding:2px 6px;font-weight:800">يدوي</span>'
         : '';
 
-      // نخزن بيانات السجل للاستخدام في الإبراء الجماعي
       financeRowsData[key] = {
         winner: item.winner, phone: item.phone||'',
         plot: item.plot||'—', amount, paid, remaining
@@ -3300,11 +3309,9 @@ function loadFinanceData() {
       summary.style.display = totalRemaining > 0 ? 'block' : 'none';
     }
 
-    // تنظيف التحديد من السجلات التي لم تعد ظاهرة (مثلاً تم إبراؤها)
     Array.from(selectedFinanceKeys).forEach(k => {
       if (!financeRowsData[k]) selectedFinanceKeys.delete(k);
     });
-    // إعادة ضبط "تحديد الكل" — يُعاد تقييمه تلقائياً عند الإعادة
     const selectAllCb = document.getElementById('fin-select-all');
     if (selectAllCb) {
       const allKeys = Object.keys(financeRowsData);
@@ -3316,15 +3323,76 @@ function loadFinanceData() {
 }
 
 function updateBiddersList(data) {
-  const select = document.getElementById('search-fin-name');
-  const cur    = select.value;
-  const names  = new Set();
-  Object.values(data).forEach(item => { if (item.winner?.trim()) names.add(item.winner); });
-  let opts = '<option value="">— عرض الجميع —</option>';
-  Array.from(names).sort().forEach(n => {
-    opts += `<option value="${n}" ${cur===n?'selected':''}>${n}</option>`;
-  });
-  select.innerHTML = opts;
+  // لا يوجد select للتعبئة — البحث نصي الآن
+}
+
+/* ══════════════════════════════════════════
+   BIDDERS SEARCH — بحث في قائمة المزايدين
+══════════════════════════════════════════ */
+// نحتفظ بجميع بيانات المزايدين لفلترة محلية سريعة
+let allBiddersData = {};
+
+function filterBiddersList(query) {
+  const list      = document.getElementById('bidders-list');
+  const noResult  = document.getElementById('bidders-no-result');
+  const clearBtn  = document.getElementById('bidders-search-clear');
+  if (!list) return;
+
+  if (clearBtn) clearBtn.style.display = query ? 'block' : 'none';
+
+  const q = query.trim().toLowerCase();
+  const entries = Object.entries(allBiddersData);
+  if (!entries.length) return;
+
+  const filtered = q
+    ? entries.filter(([key, b]) =>
+        (b.name||'').toLowerCase().includes(q) ||
+        (b.phone||key).includes(q)
+      )
+    : entries;
+
+  if (!filtered.length) {
+    list.innerHTML = '';
+    if (noResult) noResult.style.display = 'block';
+    return;
+  }
+  if (noResult) noResult.style.display = 'none';
+
+  list.innerHTML = filtered.map(([key, b]) => {
+    const initials = (b.name||'?').trim().split(' ').map(w=>w[0]).slice(0,2).join('');
+    const online   = b.isOnline ? '<span class="online-badge"></span>' : '';
+    // تظليل النص المطابق
+    const nameHl  = highlightMatch(b.name||'—', q);
+    const phoneHl = highlightMatch(b.phone||key, q);
+    return `<div class="bidder-item">
+      <div class="bidder-avatar">${initials}</div>
+      <div style="flex:1">
+        <div class="bidder-name">${online}${nameHl}</div>
+        <div class="bidder-phone">${phoneHl}</div>
+      </div>
+      <div class="bidder-actions">
+        <button class="bidder-edit" onclick="openEditBidder('${key}')">✏️</button>
+        <button class="bidder-delete" onclick="deleteBidder('${key}','${(b.name||'').replace(/'/g,'`')}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function highlightMatch(text, query) {
+  if (!query) return text;
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return text.replace(new RegExp(`(${escaped})`, 'gi'),
+    '<mark style="background:rgba(58,107,74,0.2);color:var(--sage);border-radius:3px;padding:0 2px">$1</mark>');
+}
+
+function clearBiddersSearch() {
+  const inp = document.getElementById('bidders-search');
+  if (inp) { inp.value = ''; filterBiddersList(''); }
+}
+
+function clearFinanceSearch() {
+  const inp = document.getElementById('search-fin-name');
+  if (inp) { inp.value = ''; selectedFinanceKeys.clear(); loadFinanceData(); }
 }
 
 /* ══════════════════════════════════════════
