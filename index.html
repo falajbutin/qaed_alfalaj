@@ -1452,9 +1452,9 @@ select.field-input { cursor: pointer; }
     <div class="card" style="border:1.5px solid rgba(13,79,110,0.12);box-shadow:0 4px 20px rgba(13,79,110,0.08)">
       <div class="card-title" style="color:#0d4f6e">⚡ زيادة سريعة</div>
       <div class="quick-grid">
-        <button class="quick-btn" onclick="quickBid(0.2)">+0.2</button>
-        <button class="quick-btn" onclick="quickBid(0.5)">+0.5</button>
-        <button class="quick-btn" onclick="quickBid(1)">+1</button>
+        <button class="quick-btn" onclick="unlockAudio();quickBid(0.2)">+0.2</button>
+        <button class="quick-btn" onclick="unlockAudio();quickBid(0.5)">+0.5</button>
+        <button class="quick-btn" onclick="unlockAudio();quickBid(1)">+1</button>
       </div>
       <div class="divider-or">أو أدخل مبلغاً مخصصاً</div>
       <div class="field" style="margin-top:12px;margin-bottom:14px">
@@ -1463,7 +1463,7 @@ select.field-input { cursor: pointer; }
           style="font-size:20px;text-align:center;font-weight:700;
                  border-color:rgba(13,79,110,0.2);background:rgba(13,79,110,0.03)">
       </div>
-      <button class="btn btn-bid-submit" id="bid-submit-btn" onclick="submitBid()" disabled>
+      <button class="btn btn-bid-submit" id="bid-submit-btn" onclick="unlockAudio();submitBid()" disabled>
         🌊 مزايدة الآن
       </button>
     </div>
@@ -1592,13 +1592,24 @@ select.field-input { cursor: pointer; }
       </div>
       <div id="toggle-body-manualbid">
         <div class="field-row" style="margin-bottom:10px">
-          <div class="field">
+          <div class="field" style="position:relative">
             <label class="field-label">اسم المزايد</label>
-            <input class="field-input" id="admin-bid-name" type="text" placeholder="الاسم">
+            <input class="field-input" id="admin-bid-name" type="text"
+              placeholder="🔍 ابحث بالاسم..."
+              oninput="searchBidderForManualBid(this.value)"
+              autocomplete="off">
+            <!-- قائمة الاقتراحات -->
+            <div id="manual-bid-suggestions"
+              style="display:none;position:absolute;top:100%;right:0;left:0;
+                     background:var(--white);border:1.5px solid var(--sage-lt);
+                     border-radius:var(--r-sm);box-shadow:0 8px 24px rgba(0,0,0,0.12);
+                     max-height:180px;overflow-y:auto;z-index:200"></div>
           </div>
           <div class="field">
             <label class="field-label">رقم الهاتف</label>
-            <input class="field-input" id="admin-bid-phone" type="tel" dir="ltr" placeholder="9XXXXXXXX">
+            <input class="field-input" id="admin-bid-phone" type="tel" dir="ltr"
+              placeholder="يُعبَّأ تلقائياً" readonly
+              style="background:var(--surface2);color:var(--text-mid)">
           </div>
         </div>
         <div class="field" style="margin-bottom:10px">
@@ -1842,16 +1853,11 @@ select.field-input { cursor: pointer; }
         </div>
       </div>
       <div class="field">
-        <label class="field-label">بحث حسب المزايد</label>
-        <div style="position:relative">
-          <input class="field-input" id="search-fin-name" type="text"
-            placeholder="🔍 ابحث بالاسم..."
-            oninput="selectedFinanceKeys.clear(); loadFinanceData()"
-            style="padding-right:36px">
-          <span onclick="clearFinanceSearch()"
-            style="position:absolute;left:10px;top:50%;transform:translateY(-50%);
-                   cursor:pointer;font-size:16px;color:var(--text-muted)">✕</span>
-        </div>
+        <label class="field-label">تصفية حسب المزايد</label>
+        <select class="field-input" id="search-fin-name"
+          onchange="selectedFinanceKeys.clear(); loadFinanceData()">
+          <option value="">— عرض الجميع —</option>
+        </select>
       </div>
       <div id="finance-summary" class="fin-summary" style="display:none"></div>
     </div>
@@ -2441,6 +2447,14 @@ function renderAuction(data) {
   bumpEl(document.getElementById('bidder-top-bid'), topBid);
   bumpEl(document.getElementById('admin-top-bid'), topBid);
 
+  // صوت بدء المزايدة — لجميع المستخدمين عند انتقال الحالة لـ live
+  if (isLive && window._lastAuctionStatus !== 'live') {
+    playStartSound();
+    if (navigator.vibrate) navigator.vibrate([100, 80, 100]);
+  }
+  window._lastAuctionStatus = data ? data.status : null;
+
+  // صوت المزايدة الجديدة — لجميع المستخدمين
   if (data && data.currentBid && data.currentBid !== window._lastBidPlayed) {
     window._lastBidPlayed = data.currentBid;
     playBidSound();
@@ -2508,7 +2522,7 @@ function startTimer(endsAt, ...ids) {
     ids.forEach(id => {
       const el = document.getElementById(id); if (!el) return;
       el.textContent = txt;
-      el.classList.toggle('urgent', rem <= 30000 && rem > 0);
+      el.classList.toggle('urgent', rem <= 10000 && rem > 0);
     });
     if (rem === 0) clearInterval(timerInterval);
   }, 500);
@@ -3232,7 +3246,7 @@ function saveQuickBids() {
 
 /* ══════════════ FINANCE ══════════════ */
 function loadFinanceData() {
-  const searchVal = (document.getElementById('search-fin-name').value || '').trim().toLowerCase();
+  const selectedName = (document.getElementById('search-fin-name').value || '').trim();
   const body    = document.getElementById('finance-body');
   const summary = document.getElementById('finance-summary');
   if (!db || !body) return;
@@ -3246,7 +3260,6 @@ function loadFinanceData() {
       return;
     }
 
-    // السجل المالي يعرض فقط السجلات غير المُبرأة
     const active = Object.fromEntries(
       Object.entries(data).filter(([,item]) => !item.cleared)
     );
@@ -3257,8 +3270,7 @@ function loadFinanceData() {
 
     Object.entries(active).forEach(([key, item]) => {
       if (!item.winner) return;
-      // بحث نصي جزئي — يتطابق مع أي جزء من الاسم
-      if (searchVal && !item.winner.toLowerCase().includes(searchVal)) return;
+      if (selectedName && item.winner !== selectedName) return;
 
       const amount    = Number(item.amount||0);
       const paid      = Number(item.paidAmount||0);
@@ -3273,7 +3285,8 @@ function loadFinanceData() {
 
       financeRowsData[key] = {
         winner: item.winner, phone: item.phone||'',
-        plot: item.plot||'—', amount, paid, remaining
+        plot: item.plot||'—', amount, paid, remaining,
+        dateKey: item.dateKey || ''
       };
 
       const checkedAttr = selectedFinanceKeys.has(key) ? 'checked' : '';
@@ -3323,12 +3336,68 @@ function loadFinanceData() {
 }
 
 function updateBiddersList(data) {
-  // لا يوجد select للتعبئة — البحث نصي الآن
+  const select = document.getElementById('search-fin-name');
+  if (!select) return;
+  const cur   = select.value;
+  const names = new Set();
+  Object.values(data).forEach(item => { if (item.winner?.trim()) names.add(item.winner); });
+  let opts = '<option value="">— عرض الجميع —</option>';
+  Array.from(names).sort().forEach(n => {
+    opts += `<option value="${n}" ${cur===n?'selected':''}>${n}</option>`;
+  });
+  select.innerHTML = opts;
 }
 
 /* ══════════════════════════════════════════
-   BIDDERS SEARCH — بحث في قائمة المزايدين
+   MANUAL BID — بحث تلقائي عن المزايد
 ══════════════════════════════════════════ */
+function searchBidderForManualBid(query) {
+  const sugBox = document.getElementById('manual-bid-suggestions');
+  const phoneInp = document.getElementById('admin-bid-phone');
+  if (!sugBox) return;
+
+  // مسح الهاتف عند تغيير البحث
+  if (phoneInp) { phoneInp.value = ''; phoneInp.removeAttribute('data-selected'); }
+
+  if (!query.trim()) { sugBox.style.display = 'none'; return; }
+
+  const q = query.trim().toLowerCase();
+  const matches = Object.entries(allBiddersData)
+    .filter(([,b]) => (b.name||'').toLowerCase().includes(q))
+    .slice(0, 8);
+
+  if (!matches.length) { sugBox.style.display = 'none'; return; }
+
+  sugBox.innerHTML = matches.map(([key, b]) =>
+    `<div onclick="selectBidderForManualBid('${(b.name||'').replace(/'/g,'`')}','${b.phone||key}')"
+      style="padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);
+             display:flex;justify-content:space-between;align-items:center"
+      onmouseover="this.style.background='var(--sage-pale)'"
+      onmouseout="this.style.background=''">
+      <span style="font-weight:700">${highlightMatch(b.name||'—', q)}</span>
+      <span style="font-size:11px;color:var(--text-muted)">${b.phone||key}</span>
+    </div>`
+  ).join('');
+  sugBox.style.display = 'block';
+}
+
+function selectBidderForManualBid(name, phone) {
+  const nameInp  = document.getElementById('admin-bid-name');
+  const phoneInp = document.getElementById('admin-bid-phone');
+  const sugBox   = document.getElementById('manual-bid-suggestions');
+  if (nameInp)  nameInp.value  = name;
+  if (phoneInp) { phoneInp.value = phone; phoneInp.setAttribute('data-selected','1'); }
+  if (sugBox)   sugBox.style.display = 'none';
+}
+
+// إغلاق القائمة عند النقر خارجها
+document.addEventListener('click', e => {
+  const sug = document.getElementById('manual-bid-suggestions');
+  const inp = document.getElementById('admin-bid-name');
+  if (sug && inp && !inp.contains(e.target) && !sug.contains(e.target)) {
+    sug.style.display = 'none';
+  }
+});
 // نحتفظ بجميع بيانات المزايدين لفلترة محلية سريعة
 let allBiddersData = {};
 
@@ -3486,7 +3555,12 @@ function clearSelectedFinance() {
 
 function sendBulkClearanceWhatsapp(winner, phone, items, total) {
   if (!phone) { showToast('لا يوجد رقم هاتف لهذا المزايد', 'warn'); return; }
-  const list = items.map(it => `- ربع ${it.plot}: ${it.remaining.toFixed(3)} ر.ع`).join('\n');
+  const list = items.map(it => {
+    const dateLabel = it.dateKey
+      ? new Date(it.dateKey+'T12:00:00').toLocaleDateString('ar-OM',{day:'numeric',month:'numeric',year:'numeric'})
+      : '';
+    return `- ربع ${it.plot}${dateLabel ? ' بتاريخ '+dateLabel : ''}: ${it.remaining.toFixed(3)} ر.ع`;
+  }).join('\n');
   const msg = `السلام عليكم ورحمة الله وبركاته،\nأخي الكريم: ${winner||''} 👋\n\nنشكركم على وفائكم بسداد كامل مستحقاتكم في منصة قعد فلج بطين 🌴:\n${list}\n\nالإجمالي المسدد: *${total.toFixed(3)} ر.ع*\n\nبارك الله فيكم وجزاكم خيراً على حسن تعاملكم. 🤝`;
   openWhatsapp(phone, msg);
 }
@@ -3506,7 +3580,7 @@ function updatePaidAmount(key, newPaid, total) {
             cleared: true
           }).then(() => showToast('تم إبراء الذمة ✅', 'success'));
         },
-        () => sendClearanceWhatsapp(item.winner, item.phone, item.plot, total),
+        () => sendClearanceWhatsapp(item.winner, item.phone, item.plot, total, item.dateKey),
         'نعم، إبراء الذمة'
       );
     });
@@ -3536,7 +3610,7 @@ function deleteFinanceRecord(key, winner, plot) {
             cleared: true
           }).then(() => showToast('تم إبراء الذمة ✅', 'success'));
         },
-        () => sendClearanceWhatsapp(winner, item.phone, plot, item.amount),
+        () => sendClearanceWhatsapp(winner, item.phone, plot, item.amount, item.dateKey),
         'نعم، تم الاستلام'
       );
     }
@@ -3619,6 +3693,18 @@ function saveManualEntryEdit(key) {
     restoreManualEntryBtn();
     closeModal('modal-manual-entry');
     showToast('✅ تم تعديل الإدخال', 'success');
+    // إرسال واتساب للمزايد بالتعديل
+    if (phone) {
+      const dateLabel = new Date(timestamp).toLocaleDateString('ar-OM',{
+        year:'numeric', month:'long', day:'numeric'
+      });
+      const msg =
+        `السلام عليكم ورحمة الله وبركاته،\n` +
+        `أخي الكريم: ${winner} 👋\n\n` +
+        `تم تعديل التسجيل اليدوي بإسمكم لربع (${plot}) بتاريخ (${dateLabel}) بقيمة (${Number(amount).toFixed(3)} ر.ع).\n\n` +
+        `يرجى التواصل مع وكيل الفلج لإتمام الدفع. 🌴`;
+      setTimeout(() => openWhatsapp(phone, msg), 600);
+    }
   }).catch(() => showToast('خطأ في الحفظ', 'error'));
 }
 
@@ -3670,7 +3756,7 @@ function showManualDeleteChoice(key, winner, plot, item) {
           cleared: true
         }).then(() => showToast('تم إبراء الذمة ✅', 'success'));
       },
-      () => sendClearanceWhatsapp(winner, item.phone, plot, amount),
+      () => sendClearanceWhatsapp(winner, item.phone, plot, amount, item.dateKey),
       'نعم، تم الاستلام'
     );
   };
@@ -3694,9 +3780,15 @@ function showManualDeleteChoice(key, winner, plot, item) {
   };
 }
 
-function sendClearanceWhatsapp(winner, phone, plot, amount) {
+function sendClearanceWhatsapp(winner, phone, plot, amount, dateKey) {
   if (!phone) { showToast('لا يوجد رقم هاتف لهذا المزايد', 'warn'); return; }
-  const msg = `السلام عليكم ورحمة الله وبركاته،\nأخي الكريم: ${winner||''} 👋\n\nنشكركم على وفائكم بسداد مستحقات ربع (${plot||''}) بقيمة (${Number(amount||0).toFixed(3)} ر.ع) في منصة قعد فلج بطين 🌴\n\nبارك الله فيكم وجزاكم خيراً على حسن تعاملكم. 🤝`;
+  const dateLabel = dateKey
+    ? new Date(dateKey+'T12:00:00').toLocaleDateString('ar-OM',{day:'numeric',month:'numeric',year:'numeric'})
+    : '';
+  const plotInfo = dateLabel
+    ? `ربع (${plot||''}) بتاريخ ${dateLabel} بقيمة (${Number(amount||0).toFixed(3)} ر.ع)`
+    : `ربع (${plot||''}) بقيمة (${Number(amount||0).toFixed(3)} ر.ع)`;
+  const msg = `السلام عليكم ورحمة الله وبركاته،\nأخي الكريم: ${winner||''} 👋\n\nنشكركم على وفائكم بسداد مستحقات ${plotInfo} في منصة قعد فلج بطين 🌴\n\nبارك الله فيكم وجزاكم خيراً على حسن تعاملكم. 🤝`;
   openWhatsapp(phone, msg);
 }
 
@@ -3737,11 +3829,15 @@ function sendWhatsAppReminder() {
   db.ref('history').once('value', snap => {
     const data = snap.val(); let total = 0, phone = '', details = '';
     Object.values(data||{}).forEach(item => {
-      if (item.winner === name) {
-        const rem = Number(item.remaining || (item.amount - (item.paidAmount||0)));
+      if (item.winner === name && !item.cleared) {
+        const rem = Number(item.amount||0) - Number(item.paidAmount||0);
         if (rem > 0) {
           total += rem;
-          details += `\n- ربع ${item.plot}: ${rem.toFixed(3)} ر.ع`;
+          // إضافة التاريخ لكل ربع
+          const dateLabel = item.dateKey
+            ? new Date(item.dateKey+'T12:00:00').toLocaleDateString('ar-OM',{day:'numeric',month:'numeric',year:'numeric'})
+            : (item.timestamp ? new Date(item.timestamp).toLocaleDateString('ar-OM',{day:'numeric',month:'numeric',year:'numeric'}) : '');
+          details += `\n- ربع ${item.plot||'—'} بتاريخ ${dateLabel}: ${rem.toFixed(3)} ر.ع`;
           if (!phone && item.phone) phone = item.phone;
         }
       }
@@ -4572,7 +4668,7 @@ function saveManualEntry() {
       const msg =
         `السلام عليكم ورحمة الله وبركاته،\n` +
         `أخي الكريم: ${winner} 👋\n\n` +
-        `لقد تم التسجيل اليدوي بإسمكم لربع (${plot}) ليوم القعد بتاريخ (${dateLabel}) بقيمة (${amount.toFixed(3)} ر.ع).\n\n` +
+        `لقد تم التسجيل اليدوي بإسمكم لربع (${plot}) بتاريخ (${dateLabel}) بقيمة (${amount.toFixed(3)} ر.ع).\n\n` +
         `يرجى التواصل مع وكيل الفلج لإتمام الدفع. 🌴`;
       setTimeout(() => openWhatsapp(phone, msg), 600);
     }
