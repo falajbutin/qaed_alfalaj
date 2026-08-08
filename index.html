@@ -1565,18 +1565,18 @@ select.field-input { cursor: pointer; }
       <div class="field-row" style="margin-bottom:14px">
         <div class="field">
           <label class="field-label">مدة المزايدة (ثانية)</label>
-          <input class="field-input" id="a-duration" type="number" value="100" min="30" dir="ltr">
+          <input class="field-input" id="a-duration" type="number" value="30" min="30" dir="ltr">
         </div>
         <div class="field">
-          <label class="field-label">تمديد تلقائي (ثانية)</label>
-          <input class="field-input" id="a-extend" type="number" value="30" min="10" dir="ltr">
+          <label class="field-label">مدة التمديد (ثانية)</label>
+          <input class="field-input" id="a-extend" type="number" value="0" min="0" dir="ltr">
         </div>
       </div>
       <div class="ctrl-grid">
         <button class="btn btn-sage" id="btn-start" onclick="adminStartAuction()" data-perm="auction">▶ بدء المزايدة</button>
         <button class="btn btn-red"  id="btn-stop"  onclick="adminStopAuction()"  data-perm="auction">⏹ إيقاف</button>
         <button class="btn btn-gold" id="btn-next"  onclick="adminNextItem()"     data-perm="auction">التالي ⏭</button>
-        <button class="btn btn-ghost"               onclick="adminAddTime()"      data-perm="auction">+1 دقيقة</button>
+        <button class="btn btn-ghost"               onclick="adminAddTime()"      data-perm="auction">⏱ تمديد</button>
       </div>
       <div style="display:flex;gap:8px;margin-top:8px">
         <button class="btn btn-ghost btn-sm" onclick="openModal('modal-reset')" data-perm="auction">🔄 إعادة ضبط</button>
@@ -2773,20 +2773,12 @@ function doPlaceBid(amount, name, phone) {
     cur.currentBid = amount;
     cur.currentBidder = name;
     cur.currentBidderPhone = phone;
-    const extMs = (cur.extend || 30) * 1000;
-    // إصلاح العداد: نأخذ أكبر قيمة بين:
-    // - الوقت المتبقي الحالي + التمديد (إذا كان الوقت لا يزال أكبر)
-    // - الآن + التمديد (إذا انتهى الوقت أو قارب)
-    // هذا يضمن دائماً إضافة مدة التمديد كاملة بغض النظر عن التأخير
-    const currentEndsAt = cur.endsAt || safeNow;
-    const remainingMs   = currentEndsAt - safeNow;
-    if (remainingMs > extMs) {
-      // الوقت المتبقي أكبر من التمديد — لا داعي للتمديد
-      // (مزايدة في بداية الجلسة)
-    } else {
-      // وقت قليل متبقي — نُمدِّد من الآن
-      cur.endsAt = safeNow + extMs;
+    const extMs = (Number(cur.extend) || 0) * 1000;
+    // التمديد التلقائي — فقط إذا كانت قيمة التمديد أكبر من صفر
+    if (extMs > 0) {
+      cur.endsAt = Math.max(cur.endsAt || safeNow, safeNow + extMs);
     }
+    // إذا extMs = 0 → الوقت يبقى كما هو بدون أي تغيير
     return cur;
   }, (err, committed, snap) => {
     if (err) {
@@ -2897,7 +2889,7 @@ function adminStartAuction() {
   const plot    = document.getElementById('a-plot').value || 'ربع الفلج';
   const minStep = parseFloat(document.getElementById('a-min-step').value) || 0.5;
   const dur     = parseInt(document.getElementById('a-duration').value) || 240;
-  const ext     = parseInt(document.getElementById('a-extend').value) || 30;
+  const ext     = parseInt(document.getElementById('a-extend').value) || 0;
 
   // تفعيل الصوت وتشغيل نغمة البدء
   unlockAudio();
@@ -2970,8 +2962,9 @@ function adminReset() {
 
 function adminAddTime() {
   if (!isAdmin || !currentData || currentData.status !== 'live') return;
-  auctionRef.update({ endsAt: (currentData.endsAt || now()) + 60000 })
-    .then(() => showToast('+ دقيقة واحدة أضيفت', 'success'));
+  const ext = parseInt(document.getElementById('a-extend').value) || 30;
+  auctionRef.update({ endsAt: (currentData.endsAt || now()) + (ext * 1000) })
+    .then(() => showToast(`⏱ تم تمديد الوقت ${ext} ثانية`, 'success'));
 }
 
 function adminNextItem() {
