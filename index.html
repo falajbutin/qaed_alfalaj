@@ -1569,7 +1569,7 @@ select.field-input { cursor: pointer; }
         </div>
         <div class="field">
           <label class="field-label">مدة التمديد (ثانية)</label>
-          <input class="field-input" id="a-extend" type="number" value="0" min="0" dir="ltr">
+          <input class="field-input" id="a-extend" type="number" value="20" min="0" dir="ltr">
         </div>
       </div>
       <div class="ctrl-grid">
@@ -2774,11 +2774,11 @@ function doPlaceBid(amount, name, phone) {
     cur.currentBidder = name;
     cur.currentBidderPhone = phone;
     const extMs = (Number(cur.extend) || 0) * 1000;
-    // التمديد التلقائي — فقط إذا كانت قيمة التمديد أكبر من صفر
+    // التمديد التلقائي — فقط إذا حدده المشرف يدوياً عبر Firebase
+    // (حقل مدة التمديد في الواجهة لا يُرسَل هنا — يُستخدم فقط بزر ⏱ تمديد)
     if (extMs > 0) {
       cur.endsAt = Math.max(cur.endsAt || safeNow, safeNow + extMs);
     }
-    // إذا extMs = 0 → الوقت يبقى كما هو بدون أي تغيير
     return cur;
   }, (err, committed, snap) => {
     if (err) {
@@ -2907,7 +2907,7 @@ function adminStartAuction() {
   }
 
   auctionRef.set({
-    plot, minStep, extend: ext,
+    plot, minStep, extend: 0,
     currentBid: null, currentBidder: null, currentBidderPhone: null,
     status: 'live', endsAt: now() + (dur*1000), bids: null, startedAt: Date.now(), closed: false
   }).then(() => showToast(`✅ بدأت المزايدة على "${plot}"`, 'success'));
@@ -3588,25 +3588,56 @@ function updatePaidAmount(key, newPaid, total) {
 function deleteFinanceRecord(key, winner, plot) {
   db.ref('history/'+key).once('value').then(snap => {
     const item = snap.val() || {};
+    const amount = Number(item.amount||0);
+    const typeLabel = item.isManual ? 'إدخال يدوي ✍️' : 'مزايدة';
 
-    if (item.isManual) {
-      // إدخال يدوي — نعرض نافذة بخيارين
-      showManualDeleteChoice(key, winner, plot, item);
-    } else {
-      // سجل مزايدة عادية — إبراء ذمة فقط
-      showConfirmWithWhatsapp(
-        'تأكيد الاستلام',
-        `هل تأكد استلام المبلغ من (${winner}) عن (${plot})؟`,
-        () => {
-          db.ref('history/'+key).update({
-            paidAmount: item.amount || 0,
-            cleared: true
-          }).then(() => showToast('تم إبراء الذمة ✅', 'success'));
-        },
-        () => sendClearanceWhatsapp(winner, item.phone, plot, item.amount, item.dateKey),
-        'نعم، تم الاستلام'
-      );
-    }
+    // نافذة تأكيد حذف نهائي موحّدة للجميع
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.style.cssText = 'display:flex;z-index:9999';
+    overlay.innerHTML = `
+      <div class="modal-box" style="max-width:340px">
+        <div class="modal-icon">🗑️</div>
+        <div class="modal-title" style="color:var(--red)">حذف نهائي</div>
+        <div class="modal-msg" style="text-align:right">
+          <div style="background:var(--surface2);border-radius:var(--r-sm);padding:10px 14px;margin-bottom:12px">
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">${typeLabel}</div>
+            <div style="font-weight:800;font-size:14px">${winner}</div>
+            <div style="color:var(--text-mid);font-size:13px">${plot}</div>
+            <div style="font-weight:900;color:var(--red);font-size:15px;margin-top:4px">${amount.toFixed(3)} ر.ع</div>
+          </div>
+          <div style="font-size:12px;color:var(--red);background:rgba(192,57,43,0.07);
+               border-radius:var(--r-sm);padding:10px;border-right:3px solid var(--red)">
+            ⚠️ سيُحذف هذا السجل نهائياً من السجل المالي والتقرير اليومي.<br>
+            يعود الربع تلقائياً لقائمة الربوع المتاحة.<br>
+            <strong>لا يمكن التراجع عن هذا الإجراء.</strong>
+          </div>
+        </div>
+        <div class="modal-actions" style="flex-shrink:0">
+          <button class="btn btn-ghost" id="del-cancel">إلغاء</button>
+          <button class="btn btn-red"   id="del-confirm">🗑️ حذف نهائي</button>
+        </div>
+      </div>`;
+
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('#del-cancel').onclick = () => {
+      document.body.removeChild(overlay);
+    };
+
+    overlay.querySelector('#del-confirm').onclick = () => {
+      document.body.removeChild(overlay);
+      // حذف من history/ دائماً
+      const delHistory = db.ref('history/'+key).remove();
+      // إذا كانت مزايدة عادية — نحذف من bids/ أيضاً
+      const delBids = (!item.isManual && item.dateKey && item.plot)
+        ? db.ref(`bids/${item.dateKey}/${item.plot.replace(/ /g,'_')}`).remove()
+        : Promise.resolve();
+
+      Promise.all([delHistory, delBids])
+        .then(() => showToast('🗑️ تم الحذف النهائي', 'warn'))
+        .catch(() => showToast('❌ خطأ في الحذف', 'error'));
+    };
   });
 }
 
@@ -3707,72 +3738,6 @@ function restoreManualEntryBtn() {
   if (saveBtn)  { saveBtn.setAttribute('onclick','saveManualEntry()'); saveBtn.textContent = '💾 حفظ'; }
   if (closeBtn) closeBtn.setAttribute('onclick', "closeModal('modal-manual-entry')");
 }
-function showManualDeleteChoice(key, winner, plot, item) {
-  const amount = Number(item.amount||0);
-
-  // نبني modal مؤقت بخيارين
-  const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay';
-  overlay.style.cssText = 'display:flex;z-index:9999';
-  overlay.innerHTML = `
-    <div class="modal-box" style="max-width:340px">
-      <div class="modal-icon">📋</div>
-      <div class="modal-title">إدخال يدوي — اختر الإجراء</div>
-      <div class="modal-msg" style="text-align:right">
-        <strong>${winner}</strong> — ${plot}<br>
-        المبلغ: <strong>${amount.toFixed(3)} ر.ع</strong>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
-        <button class="btn btn-sage" id="mdc-clear" style="width:100%">
-          ✅ إبراء الذمة — تم السداد
-          <div style="font-size:10px;opacity:.75;font-weight:500;margin-top:3px">يبقى في السجل السنوي</div>
-        </button>
-        <button class="btn btn-red" id="mdc-delete" style="width:100%">
-          🗑️ حذف الإدخال الخاطئ
-          <div style="font-size:10px;opacity:.75;font-weight:500;margin-top:3px">يُحذف نهائياً من جميع السجلات</div>
-        </button>
-        <button class="btn btn-ghost" id="mdc-cancel" style="width:100%">إلغاء</button>
-      </div>
-    </div>`;
-
-  document.body.appendChild(overlay);
-
-  overlay.querySelector('#mdc-clear').onclick = () => {
-    document.body.removeChild(overlay);
-    // إبراء ذمة — مع واتساب
-    showConfirmWithWhatsapp(
-      'تأكيد إبراء الذمة',
-      `هل تأكد استلام المبلغ من (${winner}) عن (${plot})؟`,
-      () => {
-        db.ref('history/'+key).update({
-          paidAmount: amount,
-          cleared: true
-        }).then(() => showToast('تم إبراء الذمة ✅', 'success'));
-      },
-      () => sendClearanceWhatsapp(winner, item.phone, plot, amount, item.dateKey),
-      'نعم، تم الاستلام'
-    );
-  };
-
-  overlay.querySelector('#mdc-delete').onclick = () => {
-    document.body.removeChild(overlay);
-    // حذف نهائي مع تحذير
-    showConfirm(
-      '⚠️ تأكيد الحذف النهائي',
-      `سيتم حذف (${plot} — ${winner}) نهائياً من السجل المالي والتقرير اليومي. هذا الإجراء لا يمكن التراجع عنه.`,
-      () => {
-        db.ref('history/'+key).remove()
-          .then(() => showToast('🗑️ تم حذف الإدخال نهائياً', 'warn'));
-      },
-      'نعم، احذف نهائياً'
-    );
-  };
-
-  overlay.querySelector('#mdc-cancel').onclick = () => {
-    document.body.removeChild(overlay);
-  };
-}
-
 function sendClearanceWhatsapp(winner, phone, plot, amount, dateKey) {
   if (!phone) { showToast('لا يوجد رقم هاتف لهذا المزايد', 'warn'); return; }
   const dateLabel = dateKey
