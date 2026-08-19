@@ -1255,6 +1255,17 @@ select.field-input { cursor: pointer; }
   </div>
 </div>
 
+<!-- مؤشر الاتصال — يظهر عند انقطاع Firebase -->
+<div id="conn-indicator" style="display:none;position:fixed;top:0;left:0;right:0;
+  background:rgba(192,57,43,0.92);color:white;padding:8px 16px;
+  align-items:center;justify-content:center;gap:8px;
+  font-family:'Tajawal',sans-serif;font-size:13px;font-weight:700;
+  z-index:99999;backdrop-filter:blur(4px)">
+  <span style="width:8px;height:8px;background:white;border-radius:50%;
+    animation:urgentBlink .7s infinite;flex-shrink:0"></span>
+  جاري إعادة الاتصال بالخادم...
+</div>
+
 <!-- ████ SCREEN: SPLASH ████ -->
 <div class="screen active" id="screen-splash">
   <div id="splash-icon-wrap" class="splash-icon">
@@ -1565,11 +1576,11 @@ select.field-input { cursor: pointer; }
       <div class="field-row" style="margin-bottom:14px">
         <div class="field">
           <label class="field-label">مدة المزايدة (ثانية)</label>
-          <input class="field-input" id="a-duration" type="number" value="30" min="30" dir="ltr">
+          <input class="field-input" id="a-duration" type="number" value="100" min="30" dir="ltr">
         </div>
         <div class="field">
           <label class="field-label">مدة التمديد (ثانية)</label>
-          <input class="field-input" id="a-extend" type="number" value="20" min="0" dir="ltr">
+          <input class="field-input" id="a-extend" type="number" value="0" min="0" dir="ltr">
         </div>
       </div>
       <div class="ctrl-grid">
@@ -2042,11 +2053,10 @@ function playStartSound() {
   playTone(659, 0.2,  0.2, 0.4);
   playTone(784, 0.4,  0.28, 0.45);
 }
-</script>
-<!-- ████████████████████████████████████████████████████████
-     JAVASCRIPT
-████████████████████████████████████████████████████████ -->
-<script>
+
+/* ████████████████████████████████████████████████████████
+     JAVASCRIPT MAIN
+████████████████████████████████████████████████████████ */
 'use strict';
 
 /* ══════════════ STATE ══════════════ */
@@ -2064,7 +2074,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
   // ممكن تعرض زر تثبيت
-  console.log("يمكن تثبيت التطبيق");
+  // تطبيق قابل للتثبيت
 });
 function installApp() {
   if (!deferredPrompt) return;
@@ -2099,7 +2109,15 @@ function stopIdleMonitor() {
 
 /* ══════════════ INIT ══════════════ */
 window.addEventListener('DOMContentLoaded', () => {
-  document.addEventListener('visibilitychange', () => { isPageVisible = !document.hidden; });
+  document.addEventListener('visibilitychange', () => {
+    isPageVisible = !document.hidden;
+    if (!document.hidden && db) {
+      db.goOnline();
+      if (isAdmin || isAssistant) {
+        setTimeout(() => refreshActiveTab(), 500);
+      }
+    }
+  });
 
   window.addEventListener('beforeunload', () => {
     if (attendanceRef && loggedPhone) attendanceRef.child(loggedPhone).remove();
@@ -2109,11 +2127,29 @@ window.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => doInitFirebase(), 900);
 });
 
+/* إعادة تحميل التبويب النشط عند عودة الاتصال */
+function refreshActiveTab() {
+  if (!db) return;
+  // المالية
+  const finTab = document.getElementById('tab-finance');
+  if (finTab && finTab.style.display !== 'none') { loadFinanceData(); return; }
+  // السجل السنوي
+  const annTab = document.getElementById('tab-annual');
+  if (annTab && annTab.style.display !== 'none') { loadAnnualRecords(); return; }
+  // النسخ
+  const bakTab = document.getElementById('tab-backup');
+  if (bakTab && bakTab.style.display !== 'none') return;
+}
+
 /* ══════════════ FIREBASE ══════════════ */
 function doInitFirebase() {
   try {
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     db = firebase.database();
+
+    // تفعيل الحفظ المحلي — يعمل offline ويُعيد الاتصال تلقائياً
+    try { db.ref('.info').keepSynced(false); } catch(e) {}
+
     auctionRef    = db.ref('auction');
     biddersRef    = db.ref('bidders');
     bidsRef       = db.ref('bids');
@@ -2121,6 +2157,18 @@ function doInitFirebase() {
     sequenceRef   = db.ref('sequence');
     activationRef = db.ref('activationRequests');
     itemsRef      = db.ref('items');
+
+    // مؤشر الاتصال — يُبلِّغ المستخدم عند الانقطاع والعودة
+    db.ref('.info/connected').on('value', snap => {
+      const connected = snap.val();
+      const indicator = document.getElementById('conn-indicator');
+      if (indicator) {
+        indicator.style.display = connected ? 'none' : 'flex';
+      }
+      if (connected && (isAdmin || isAssistant)) {
+        refreshActiveTab();
+      }
+    });
 
     syncServerTime();
     loadItems();
@@ -2130,6 +2178,14 @@ function doInitFirebase() {
     loadAdminPhone();
     loadQuickBids();
     loadAssistantCode();
+    // listener دائم للمزايدين — يُحدِّث allBiddersData عند أي تغيير
+    biddersRef.on('value', snap => {
+      allBiddersData = snap.val() || {};
+      const countEl = document.getElementById('bidders-count');
+      if (countEl) countEl.textContent = Object.keys(allBiddersData).length;
+      const q = (document.getElementById('bidders-search')?.value || '').trim();
+      filterBiddersList(q);
+    });
 
     // Check existing bidder session
     const session = localStorage.getItem('user_session');
@@ -2572,6 +2628,18 @@ function enterBidderScreen() {
   document.getElementById('bidder-name').value  = loggedName;
   document.getElementById('bidder-phone').value = loggedPhone;
   recordAttendance(loggedName, loggedPhone);
+
+  // عند انقطاع الاتصال — مسح الجلسة تلقائياً في Firebase
+  // يمنع مشكلة "جهاز آخر" عند الدخول مستقبلاً
+  if (biddersRef && loggedPhone) {
+    const userRef = biddersRef.child(loggedPhone);
+    userRef.onDisconnect().update({
+      isOnline: false,
+      sessionId: null,
+      lastSeen: Date.now()
+    });
+  }
+
   goScreen('screen-bidder');
 }
 
@@ -2639,7 +2707,26 @@ function submitLoginKey() {
 
     if (String(user.loginKey).trim() === String(enteredKey).trim()) {
       if (user.isOnline) {
-        showToast('⚠️ هذا الحساب مسجّل من جهاز آخر. تواصل مع الإدارة لتسجيل الخروج.', 'error');
+        // عرض خيار الدخول القسري بدل إغلاق الباب كلياً
+        showConfirm(
+          '⚠️ جلسة نشطة',
+          `حسابك مفتوح على جهاز آخر أو لم يُغلق بشكل صحيح.\n\nهل تريد إغلاق الجلسة القديمة والدخول من هنا؟`,
+          () => {
+            // تحرير الجلسة القديمة والدخول
+            loginAttempts = 0;
+            const sid = generateSessionId();
+            biddersRef.child(loggedPhone).update({
+              isOnline: true, sessionId: sid, sessionStartedAt: Date.now()
+            });
+            localStorage.setItem('user_session', JSON.stringify({ name: loggedName, phone: loggedPhone }));
+            document.getElementById('login-key-input').value = '';
+            closeModal('modal-enter-key');
+            showToast('✅ تم الدخول من هذا الجهاز', 'success');
+            enterBidderScreen();
+            startIdleMonitor();
+          },
+          'نعم، ادخل من هنا'
+        );
         return;
       }
       loginAttempts = 0;
@@ -3012,42 +3099,57 @@ window.adminNewDay = async function() {
     if (sequenceRef)   await sequenceRef.set({ index: -1 });
     if (bidsRef)       await bidsRef.remove();
 
-    // تعيين أول ربع في حقل الربع تلقائياً
+    // مسح جلسات جميع المزايدين — لمنع مشكلة "جهاز آخر" في اليوم التالي
+    const bidSnap = await biddersRef.once('value');
+    const updates = {};
+    Object.keys(bidSnap.val() || {}).forEach(k => {
+      updates[k + '/isOnline']   = false;
+      updates[k + '/sessionId']  = null;
+      updates[k + '/lastSeen']   = null;
+    });
+    if (Object.keys(updates).length) await biddersRef.update(updates);
+
     currentIndex = -1;
     if (auctionSequence.length) {
       const select = document.getElementById('a-plot');
       if (select) select.value = auctionSequence[0];
     }
-
-    // تفعيل زر التالي (قد يكون معطلاً من جلسة سابقة)
     const btnNext = document.getElementById('btn-next');
     if (btnNext) { btnNext.disabled = false; btnNext.style.opacity = ''; }
 
-    showToast('✅ تم بدء يوم مزايدة جديد', 'success');
-  } catch(e) { showToast('❌ حدث خطأ', 'error'); }
+    showToast('✅ تم بدء يوم مزايدة جديد — تم تحرير جميع الجلسات', 'success');
+  } catch(e) { showToast('❌ حدث خطأ: ' + e.message, 'error'); }
 };
+
+/* ══════════════════════════════════════════
+   SESSION MANAGEMENT
+══════════════════════════════════════════ */
+
+/* تحرير جلسة مزايد معيّن من لوحة المشرف */
+function releaseSession(key) {
+  const name = allBiddersData[key]?.name || key;
+  showConfirm(
+    '🔓 تحرير الجلسة',
+    `هل تريد تحرير جلسة (${name})؟\nسيتمكن من الدخول مجدداً من جهازه.`,
+    () => {
+      biddersRef.child(key).update({
+        isOnline: false, sessionId: null, lastSeen: null
+      }).then(() => showToast(`✅ تم تحرير جلسة ${name}`, 'success'))
+        .catch(() => showToast('❌ خطأ في التحرير', 'error'));
+    },
+    'نعم، تحرير'
+  );
+}
 
 /* ══════════════ BIDDERS MANAGEMENT ══════════════ */
 function loadBiddersList() {
-  if (!biddersRef) return;
-  biddersRef.on('value', snap => {
-    const data    = snap.val();
-    const list    = document.getElementById('bidders-list');
-    const countEl = document.getElementById('bidders-count');
-    if (!list) return;
-
-    allBiddersData = data || {};
-    if (countEl) countEl.textContent = Object.keys(allBiddersData).length;
-
-    if (!data) {
-      list.innerHTML = '<div class="empty-state">لا يوجد مزايدون مسجّلون</div>';
-      return;
-    }
-
-    // تطبيق الفلتر الحالي إن وُجد
-    const q = (document.getElementById('bidders-search')?.value || '').trim();
-    filterBiddersList(q);
-  });
+  // يستخدم allBiddersData المُحدَّث من listener الرئيسية في doInitFirebase
+  const list    = document.getElementById('bidders-list');
+  const countEl = document.getElementById('bidders-count');
+  if (!list) return;
+  if (countEl) countEl.textContent = Object.keys(allBiddersData).length;
+  const q = (document.getElementById('bidders-search')?.value || '').trim();
+  filterBiddersList(q);
 }
 
 function addBidder() {
@@ -3146,7 +3248,7 @@ window.approveActivation = function(key) {
   });
 };
 
-window.rejectActivation = function(key) {
+window.rejectActivation = async function(key) {
   showConfirm('رفض الطلب', 'هل تريد رفض هذا الطلب؟', async () => {
     const snap = await activationRef.child(key).once('value');
     const req  = snap.val();
@@ -3244,6 +3346,9 @@ function loadFinanceData() {
   const summary = document.getElementById('finance-summary');
   if (!db || !body) return;
 
+  // نُلغي أي listener قديم أولاً لمنع التراكم
+  // ثم نستخدم .on() ليُعيد الاتصال تلقائياً عند انقطاع الشبكة
+  db.ref('history').off('value');
   db.ref('history').on('value', snap => {
     const data = snap.val();
     if (!data) {
@@ -3423,9 +3528,12 @@ function filterBiddersList(query) {
   list.innerHTML = filtered.map(([key, b]) => {
     const initials = (b.name||'?').trim().split(' ').map(w=>w[0]).slice(0,2).join('');
     const online   = b.isOnline ? '<span class="online-badge"></span>' : '';
-    // تظليل النص المطابق
     const nameHl  = highlightMatch(b.name||'—', q);
     const phoneHl = highlightMatch(b.phone||key, q);
+    const releaseBtn = b.isOnline
+      ? `<button class="bidder-edit" onclick="releaseSession('${key}')"
+           title="تحرير الجلسة المعلّقة" style="color:var(--gold)">🔓</button>`
+      : '';
     return `<div class="bidder-item">
       <div class="bidder-avatar">${initials}</div>
       <div style="flex:1">
@@ -3433,6 +3541,7 @@ function filterBiddersList(query) {
         <div class="bidder-phone">${phoneHl}</div>
       </div>
       <div class="bidder-actions">
+        ${releaseBtn}
         <button class="bidder-edit" onclick="openEditBidder('${key}')">✏️</button>
         <button class="bidder-delete" onclick="deleteBidder('${key}','${(b.name||'').replace(/'/g,'`')}')">🗑️</button>
       </div>
@@ -3635,7 +3744,26 @@ function deleteFinanceRecord(key, winner, plot) {
         : Promise.resolve();
 
       Promise.all([delHistory, delBids])
-        .then(() => showToast('🗑️ تم الحذف النهائي', 'warn'))
+        .then(() => {
+          showToast('🗑️ تم الحذف النهائي', 'warn');
+          // إرسال واتساب للمزايد بعد الحذف
+          if (item.phone) {
+            const dateLabel = item.dateKey
+              ? new Date(item.dateKey+'T12:00:00').toLocaleDateString('ar-OM',
+                  {day:'numeric', month:'numeric', year:'numeric'})
+              : '';
+            const msg =
+              `السلام عليكم ورحمة الله وبركاته،\n` +
+              `أخي الكريم: ${winner||''} 👋\n\n` +
+              `نفيدكم بأنه تم إلغاء تسجيل ربع (${plot||''})` +
+              `${dateLabel ? ' بتاريخ ('+dateLabel+')' : ''}` +
+              ` بقيمة (${amount.toFixed(3)} ر.ع).\n\n` +
+              `للاستفسار يرجى التواصل مع وكيل الفلج. 🌴`;
+            setTimeout(() => openWhatsapp(item.phone, msg), 500);
+          } else {
+            showToast('لا يوجد رقم هاتف للمزايد', 'warn');
+          }
+        })
         .catch(() => showToast('❌ خطأ في الحذف', 'error'));
     };
   });
@@ -3864,9 +3992,7 @@ function exportFinancePDF() {
     if (w) { w.document.write(tpl); w.document.close(); }
   }
 }
-</script>
 
-<script>
 /* ══════════════════════════════════════════════════════
    NEW FEATURES: ASSISTANT + MANUAL ENTRY + ANNUAL
 ══════════════════════════════════════════════════════ */
@@ -4281,7 +4407,7 @@ function previewRestore(input) {
   reader.readAsText(file);
 }
 
-function confirmRestore() {
+async function confirmRestore() {
   if (!restoreData) return;
   showConfirm(
     '⚠️ تأكيد الاسترجاع',
@@ -4566,18 +4692,19 @@ function openManualEntryModal() {
     }
   });
 
-  // تعبئة قائمة المزايدين
-  biddersRef.once('value', snap => {
-    const data = snap.val();
-    if (!data) { bidderSel.innerHTML = '<option value="">لا يوجد مزايدون</option>'; return; }
-    bidderSel.innerHTML = '';
-    Object.entries(data).forEach(([key, b]) => {
+  // تعبئة قائمة المزايدين من الـ cache (allBiddersData) — لا يتأثر بانقطاع الاتصال
+  bidderSel.innerHTML = '';
+  const bData = allBiddersData;
+  if (!bData || !Object.keys(bData).length) {
+    bidderSel.innerHTML = '<option value="">لا يوجد مزايدون</option>';
+  } else {
+    Object.entries(bData).forEach(([key, b]) => {
       const opt = document.createElement('option');
       opt.value = b.name; opt.dataset.phone = b.phone || key;
       opt.textContent = b.name;
       bidderSel.appendChild(opt);
     });
-  });
+  }
 
   // تاريخ اليوم افتراضياً
   document.getElementById('manual-date').value  = today;
@@ -4776,7 +4903,7 @@ if ('serviceWorker' in navigator) {
         newSW.addEventListener('statechange', () => {
           // عندما يكون جاهزاً للتفعيل — نُفعّله فوراً
           if (newSW.state === 'installed') {
-            console.log('🔄 نسخة جديدة — تفعيل فوري...');
+
             // نرسل له SKIP_WAITING مباشرة بدون انتظار المستخدم
             newSW.postMessage('SKIP_WAITING');
           }
