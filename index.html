@@ -1200,7 +1200,7 @@ select.field-input { cursor: pointer; }
     </div>
     <div class="field">
       <label class="field-label">التاريخ</label>
-      <input class="field-input" id="manual-date" type="date" dir="ltr">
+      <input class="field-input" id="manual-date" type="date" dir="ltr" style="text-align:left">
     </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('modal-manual-entry')">إلغاء</button>
@@ -1576,11 +1576,11 @@ select.field-input { cursor: pointer; }
       <div class="field-row" style="margin-bottom:14px">
         <div class="field">
           <label class="field-label">مدة المزايدة (ثانية)</label>
-          <input class="field-input" id="a-duration" type="number" value="5000" min="30" dir="ltr">
+          <input class="field-input" id="a-duration" type="number" value="100" min="30" dir="ltr">
         </div>
         <div class="field">
           <label class="field-label">مدة التمديد (ثانية)</label>
-          <input class="field-input" id="a-extend" type="number" value="50" min="0" dir="ltr">
+          <input class="field-input" id="a-extend" type="number" value="0" min="0" dir="ltr">
         </div>
       </div>
       <div class="ctrl-grid">
