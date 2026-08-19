@@ -2109,14 +2109,28 @@ function stopIdleMonitor() {
 
 /* ══════════════ INIT ══════════════ */
 window.addEventListener('DOMContentLoaded', () => {
-  document.addEventListener('visibilitychange', () => {
-    isPageVisible = !document.hidden;
-    if (!document.hidden && db) {
+
+  // دالة مشتركة لإعادة الاتصال
+  function reconnectFirebase() {
+    if (!db) return;
+    db.goOffline();
+    setTimeout(() => {
       db.goOnline();
       if (isAdmin || isAssistant) {
-        setTimeout(() => refreshActiveTab(), 500);
+        setTimeout(() => refreshActiveTab(), 1000);
       }
-    }
+    }, 400);
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    isPageVisible = !document.hidden;
+    if (!document.hidden) reconnectFirebase();
+  });
+
+  // دعم PWA — عند الرجوع للتطبيق من الـ home screen
+  window.addEventListener('focus', () => { reconnectFirebase(); });
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted) reconnectFirebase(); // BFCache restore
   });
 
   window.addEventListener('beforeunload', () => {
@@ -2159,14 +2173,21 @@ function doInitFirebase() {
     itemsRef      = db.ref('items');
 
     // مؤشر الاتصال — يُبلِّغ المستخدم عند الانقطاع والعودة
+    let connTimer = null;
     db.ref('.info/connected').on('value', snap => {
       const connected = snap.val();
       const indicator = document.getElementById('conn-indicator');
-      if (indicator) {
-        indicator.style.display = connected ? 'none' : 'flex';
-      }
-      if (connected && (isAdmin || isAssistant)) {
-        refreshActiveTab();
+      if (connected) {
+        // اتصال عاد — أخفِ المؤشر فوراً
+        if (connTimer) { clearTimeout(connTimer); connTimer = null; }
+        if (indicator) indicator.style.display = 'none';
+        if (isAdmin || isAssistant) refreshActiveTab();
+      } else {
+        // انقطاع — أظهر المؤشر بعد 3 ثوانٍ (لتجنب الوميض المؤقت عند التهيئة)
+        if (connTimer) clearTimeout(connTimer);
+        connTimer = setTimeout(() => {
+          if (indicator) indicator.style.display = 'flex';
+        }, 3000);
       }
     });
 
