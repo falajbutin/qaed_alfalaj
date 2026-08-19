@@ -1200,7 +1200,23 @@ select.field-input { cursor: pointer; }
     </div>
     <div class="field">
       <label class="field-label">التاريخ</label>
-      <input class="field-input" id="manual-date" type="date" dir="ltr" style="text-align:left">
+      <!-- حقل التاريخ — ثلاثة منسدلات لتجنب مشكلة الجوال -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px" id="manual-date-selects">
+        <div class="field">
+          <label class="field-label" style="font-size:10px">اليوم</label>
+          <select class="field-input" id="manual-date-day" dir="ltr" style="text-align:center"></select>
+        </div>
+        <div class="field">
+          <label class="field-label" style="font-size:10px">الشهر</label>
+          <select class="field-input" id="manual-date-month" dir="ltr" style="text-align:center"></select>
+        </div>
+        <div class="field">
+          <label class="field-label" style="font-size:10px">السنة</label>
+          <select class="field-input" id="manual-date-year" dir="ltr" style="text-align:center"></select>
+        </div>
+      </div>
+      <!-- حقل مخفي للقيمة الفعلية — يُستخدم داخلياً -->
+      <input type="hidden" id="manual-date">
     </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('modal-manual-entry')">إلغاء</button>
@@ -1576,11 +1592,11 @@ select.field-input { cursor: pointer; }
       <div class="field-row" style="margin-bottom:14px">
         <div class="field">
           <label class="field-label">مدة المزايدة (ثانية)</label>
-          <input class="field-input" id="a-duration" type="number" value="100" min="30" dir="ltr">
+          <input class="field-input" id="a-duration" type="number" value="30" min="30" dir="ltr">
         </div>
         <div class="field">
           <label class="field-label">مدة التمديد (ثانية)</label>
-          <input class="field-input" id="a-extend" type="number" value="0" min="0" dir="ltr">
+          <input class="field-input" id="a-extend" type="number" value="20" min="0" dir="ltr">
         </div>
       </div>
       <div class="ctrl-grid">
@@ -3838,7 +3854,7 @@ function editManualEntry(key) {
 
     // تعبئة باقي الحقول
     document.getElementById('manual-amount').value = Number(item.amount||0).toFixed(3);
-    document.getElementById('manual-date').value   = item.dateKey || '';
+    setDateSelects(item.dateKey || '');
 
     // تغيير زر الحفظ ليحفظ على نفس السجل
     const saveBtn = document.querySelector('#modal-manual-entry .btn-sage');
@@ -3859,7 +3875,7 @@ function saveManualEntryEdit(key) {
   const plotSel   = document.getElementById('manual-plot');
   const bidderSel = document.getElementById('manual-bidder');
   const amount    = parseFloat(document.getElementById('manual-amount').value);
-  const dateVal   = document.getElementById('manual-date').value;
+  const dateVal   = getManualDateValue();
   const plot      = plotSel.value;
   const winner    = bidderSel.value;
   const phone     = bidderSel.selectedOptions[0]?.dataset.phone || '';
@@ -4031,8 +4047,79 @@ function exportFinancePDF() {
 ══════════════════════════════════════════════════════ */
 
 /* ══════════════════════════════════════════
-   TOGGLE: ATTENDANCE & ITEMS
+   DATE SELECTS — بناء منسدلات التاريخ
 ══════════════════════════════════════════ */
+function buildDateSelects(defaultDate) {
+  const dayEl   = document.getElementById('manual-date-day');
+  const monEl   = document.getElementById('manual-date-month');
+  const yearEl  = document.getElementById('manual-date-year');
+  if (!dayEl || !monEl || !yearEl) return;
+
+  // تحليل التاريخ الافتراضي
+  const now = new Date();
+  let defY = now.getFullYear(), defM = now.getMonth()+1, defD = now.getDate();
+  if (defaultDate && defaultDate.includes('-')) {
+    const parts = defaultDate.split('-');
+    defY = parseInt(parts[0])||defY;
+    defM = parseInt(parts[1])||defM;
+    defD = parseInt(parts[2])||defD;
+  }
+
+  // أيام
+  dayEl.innerHTML = '';
+  for (let d=1; d<=31; d++) {
+    const o = document.createElement('option');
+    o.value = String(d).padStart(2,'0');
+    o.textContent = String(d).padStart(2,'0');
+    if (d === defD) o.selected = true;
+    dayEl.appendChild(o);
+  }
+
+  // شهور
+  const months = ['01','02','03','04','05','06','07','08','09','10','11','12'];
+  const mNames = ['يناير','فبراير','مارس','أبريل','مايو','يونيو',
+                  'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  monEl.innerHTML = '';
+  months.forEach((m, i) => {
+    const o = document.createElement('option');
+    o.value = m; o.textContent = `${m} - ${mNames[i]}`;
+    if (i+1 === defM) o.selected = true;
+    monEl.appendChild(o);
+  });
+
+  // سنوات (5 سنوات للخلف والأمام)
+  yearEl.innerHTML = '';
+  for (let y = defY-5; y <= defY+2; y++) {
+    const o = document.createElement('option');
+    o.value = String(y); o.textContent = String(y);
+    if (y === defY) o.selected = true;
+    yearEl.appendChild(o);
+  }
+
+  syncDateHidden();
+
+  // تحديث الحقل المخفي عند أي تغيير
+  [dayEl, monEl, yearEl].forEach(el => el.addEventListener('change', syncDateHidden));
+}
+
+function syncDateHidden() {
+  const d = document.getElementById('manual-date-day')?.value   || '01';
+  const m = document.getElementById('manual-date-month')?.value || '01';
+  const y = document.getElementById('manual-date-year')?.value  || '2026';
+  const hidden = document.getElementById('manual-date');
+  if (hidden) hidden.value = `${y}-${m}-${d}`;
+}
+
+function getManualDateValue() {
+  syncDateHidden();
+  return document.getElementById('manual-date')?.value || '';
+}
+
+/* تعيين قيمة لمنسدلات التاريخ */
+function setDateSelects(dateStr) {
+  if (!dateStr || !dateStr.includes('-')) return;
+  buildDateSelects(dateStr);
+}
 let attVisible = false, itemsVisible = false;
 const cardVisState = {};
 
@@ -4740,7 +4827,7 @@ function openManualEntryModal() {
   }
 
   // تاريخ اليوم افتراضياً
-  document.getElementById('manual-date').value  = today;
+  buildDateSelects(today);
   document.getElementById('manual-amount').value = '';
 
   openModal('modal-manual-entry');
@@ -4750,7 +4837,7 @@ function saveManualEntry() {
   const plotSel   = document.getElementById('manual-plot');
   const bidderSel = document.getElementById('manual-bidder');
   const amount    = parseFloat(document.getElementById('manual-amount').value);
-  const dateVal   = document.getElementById('manual-date').value;
+  const dateVal   = getManualDateValue();
 
   const plot   = plotSel.value;
   const winner = bidderSel.value;
