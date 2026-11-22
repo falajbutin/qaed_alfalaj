@@ -330,22 +330,35 @@ function doInitFirebase() {
   if (session) {
     try {
       const parsed = JSON.parse(session);
-      loggedName  = parsed.name;
-      loggedPhone = parsed.phone;
-      /* تحقق من وجود المزايد في Firebase */
-      window._fbGet('bidders').then(snap => {
-        const bidders = snap.val() || {};
-        const found = Object.values(bidders).find(b => b.phone === loggedPhone);
-        if (found) {
-          window.allBiddersData = bidders;
+      if (parsed.phone && parsed.name) {
+        loggedName  = parsed.name;
+        loggedPhone = parsed.phone;
+        /* تحقق من وجود المزايد في Firebase مع مقارنة loginKey */
+        window._fbGet('bidders/' + parsed.phone).then(snap => {
+          const bidder = snap.val();
+          const keyMatch = !parsed.loginKey || // جلسة قديمة بدون key → اقبل
+            (bidder && String(bidder.loginKey) === String(parsed.loginKey));
+          if (bidder && keyMatch) {
+            loggedName  = bidder.name  || parsed.name;
+            loggedPhone = bidder.phone || parsed.phone;
+            // حدّث الجلسة بالمفتاح إن لم يكن محفوظاً
+            if (!parsed.loginKey && bidder.loginKey) {
+              localStorage.setItem('user_session', JSON.stringify({ name: loggedName, phone: loggedPhone, loginKey: String(bidder.loginKey) }));
+            }
+            if (!window.allBiddersData) window.allBiddersData = {};
+            window.allBiddersData[parsed.phone] = bidder;
+            enterBidderScreen(); startIdleMonitor();
+          } else {
+            localStorage.removeItem('user_session');
+            goScreen('screen-login');
+            setTimeout(resetLoginScreen, 50);
+          }
+        }).catch(() => {
+          // Firebase غير متاح — ادخل بالبيانات المحلية
           enterBidderScreen(); startIdleMonitor();
-        } else {
-          localStorage.removeItem('user_session');
-          goScreen('screen-login');
-          setTimeout(resetLoginScreen, 50);
-        }
-      });
-      return;
+        });
+        return;
+      }
     } catch(e) {}
     localStorage.removeItem('user_session');
   }
@@ -2068,7 +2081,7 @@ select.field-input { cursor: pointer; }
 <!-- ████ SCREEN: SPLASH ████ -->
 <div class="screen active" id="screen-splash">
   <div id="splash-icon-wrap" class="splash-icon">
-    <img src="icon-512.png" alt="قعد الفلج" onerror="this.parentElement.classList.remove('splash-icon');this.parentElement.classList.add('splash-icon-fallback');this.parentElement.innerHTML='🌴'">
+    <img src="icons/icon-512x512.png" alt="قعد الفلج" onerror="this.parentElement.classList.remove('splash-icon');this.parentElement.classList.add('splash-icon-fallback');this.parentElement.innerHTML='🌴'">
   </div>
   <div class="splash-name">قعد فلج بطين</div>
   <div class="splash-tagline">منصة المزايدة الإلكترونية لربوع فلج بطين</div>
@@ -2086,7 +2099,7 @@ select.field-input { cursor: pointer; }
   <div class="top-bar">
     <div class="top-bar-brand">
       <div class="top-bar-logo">
-        <img src="icon-512.png" alt="" onerror="this.parentElement.innerHTML='🌴';this.parentElement.style.display='flex';this.parentElement.style.alignItems='center';this.parentElement.style.justifyContent='center'">
+        <img src="icons/icon-512x512.png" alt="" onerror="this.parentElement.innerHTML='🌴';this.parentElement.style.display='flex';this.parentElement.style.alignItems='center';this.parentElement.style.justifyContent='center'">
       </div>
       <div>
         <div class="top-bar-title">قعد فلج بطين</div>
@@ -2100,7 +2113,7 @@ select.field-input { cursor: pointer; }
 
       <!-- شعار وعنوان -->
       <div class="login-brand">
-        <div class="login-brand-logo">🌴</div>
+        <div class="login-brand-logo"><img src="icons/icon-192x192.png" alt="قعد الفلج" style="width:64px;height:64px;border-radius:16px" onerror="this.outerHTML='🌴'"></div>
         <div class="login-brand-title">منصة المزايدة</div>
         <div class="login-brand-sub">قعد فلج بطين</div>
       </div>
@@ -2161,7 +2174,7 @@ select.field-input { cursor: pointer; }
   <div class="top-bar">
     <div class="top-bar-brand">
       <div class="top-bar-logo">
-        <img src="icon-512.png" alt="" onerror="this.parentElement.innerHTML='🌴'">
+        <img src="icons/icon-512x512.png" alt="" onerror="this.parentElement.innerHTML='🌴'">
       </div>
       <div><div class="top-bar-title">تسجيل جديد</div></div>
     </div>
@@ -2206,7 +2219,7 @@ select.field-input { cursor: pointer; }
   <div class="top-bar bidder-top-bar">
     <div class="top-bar-brand">
       <div class="top-bar-logo">
-        <img src="icon-512.png" alt="" onerror="this.parentElement.innerHTML='🌴'">
+        <img src="icons/icon-512x512.png" alt="" onerror="this.parentElement.innerHTML='🌴'">
       </div>
       <div>
         <div class="top-bar-title bidder-bar-title">مزايدة قعد الفلج</div>
@@ -2356,7 +2369,7 @@ select.field-input { cursor: pointer; }
   <div class="top-bar">
     <div class="top-bar-brand">
       <div class="top-bar-logo">
-        <img src="icon-512.png" alt="" onerror="this.parentElement.innerHTML='🌴'">
+        <img src="icons/icon-512x512.png" alt="" onerror="this.parentElement.innerHTML='🌴'">
       </div>
       <div>
         <div class="top-bar-title">لوحة تحكم المشرف</div>
@@ -3170,10 +3183,39 @@ function demoInit() {
   if (session) {
     try {
       const parsed = JSON.parse(session);
-      loggedName  = parsed.name;
-      loggedPhone = parsed.phone;
-      const found = Object.values(allBiddersData).find(b => b.phone === loggedPhone);
-      if (found) { enterBidderScreen(); startIdleMonitor(); return; }
+      if (parsed.phone && parsed.name && parsed.loginKey) {
+        loggedName  = parsed.name;
+        loggedPhone = parsed.phone;
+        // ابحث في Firebase مباشرة لضمان صحة البيانات
+        window._fbGet('bidders/' + parsed.phone).then(snap => {
+          const bidder = snap.val();
+          if (bidder && String(bidder.loginKey) === String(parsed.loginKey)) {
+            // الجلسة صحيحة — ادخل مباشرة
+            loggedName  = bidder.name  || parsed.name;
+            loggedPhone = bidder.phone || parsed.phone;
+            enterBidderScreen();
+            startIdleMonitor();
+          } else {
+            // المفتاح تغيّر أو المزايد غير موجود — أعد تسجيل الدخول
+            localStorage.removeItem('user_session');
+            goScreen('screen-login');
+            setTimeout(resetLoginScreen, 50);
+          }
+        }).catch(() => {
+          // Firebase غير متاح — استخدم البيانات المحلية كاحتياط
+          const found = Object.values(allBiddersData).find(
+            b => b.phone === parsed.phone && String(b.loginKey) === String(parsed.loginKey)
+          );
+          if (found) {
+            enterBidderScreen(); startIdleMonitor();
+          } else {
+            localStorage.removeItem('user_session');
+            goScreen('screen-login');
+            setTimeout(resetLoginScreen, 50);
+          }
+        });
+        return; // انتظر نتيجة Firebase
+      }
     } catch(e) {}
     localStorage.removeItem('user_session');
   }
@@ -3853,7 +3895,8 @@ function submitRegister() {
     closeModal('modal-login-key');
     loggedPhone = phone; loggedName = name;
     allBiddersData[phone].isOnline = true;
-    localStorage.setItem('user_session', JSON.stringify({ name, phone }));
+    const _lk1 = allBiddersData[phone]?.loginKey || '';
+    localStorage.setItem('user_session', JSON.stringify({ name, phone, loginKey: _lk1 }));
     enterBidderScreen(); startIdleMonitor();
   };
   openSingleModal('modal-login-key');
@@ -3949,7 +3992,7 @@ function submitLoginKey() {
   loggedPhone = String(bidder.phone || phone);
   loggedName  = String(bidder.name || loggedName || 'مزايد');
   loginAttempts = 0;
-  localStorage.setItem('user_session', JSON.stringify({ name: loggedName, phone: loggedPhone }));
+  localStorage.setItem('user_session', JSON.stringify({ name: loggedName, phone: loggedPhone, loginKey: String(bidder.loginKey || '') }));
   document.getElementById('login-key-input').value = '';
   closeModal('modal-enter-key');
   showToast('✅ تم تسجيل الدخول', 'success');
@@ -3997,7 +4040,7 @@ function verifyEnteredCode() {
   if (bidder && entered && String(bidder.loginKey) === entered) {
     loggedPhone = activeVerifyingPhone;
     loggedName = bidder.name || '';
-    localStorage.setItem('user_session', JSON.stringify({ name: loggedName, phone: loggedPhone }));
+    localStorage.setItem('user_session', JSON.stringify({ name: loggedName, phone: loggedPhone, loginKey: String(bidder.loginKey || '') }));
     closeModal('modal-otp');
     showToast('✅ تم التحقق بنجاح', 'success');
     enterBidderScreen(); startIdleMonitor();
