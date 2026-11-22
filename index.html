@@ -260,7 +260,7 @@ function doInitFirebase() {
   window._firebaseReady = true;
 
   /* 8) دخول مستخدم محفوظ — تحقق مباشر من Firebase */
-  const adminSession = sessionStorage.getItem('admin_session');
+  const adminSession = localStorage.getItem('admin_session');
   if (adminSession) {
     try {
       const parsed = JSON.parse(adminSession);
@@ -273,7 +273,7 @@ function doInitFirebase() {
             if (window.goScreen) goScreen('screen-admin');
             adminTab('auction'); applyAssistantUI(); setTimeout(initCollapsedCards, 300);
           } else {
-            sessionStorage.removeItem('admin_session');
+            localStorage.removeItem('admin_session');
             if (window.goScreen) goScreen('screen-login');
             setTimeout(resetLoginScreen, 50);
           }
@@ -285,7 +285,7 @@ function doInitFirebase() {
             if (window.goScreen) goScreen('screen-admin');
             adminTab('auction'); applyAssistantUI(); setTimeout(initCollapsedCards, 300);
           } else {
-            sessionStorage.removeItem('admin_session');
+            localStorage.removeItem('admin_session');
             if (window.goScreen) goScreen('screen-login');
             setTimeout(resetLoginScreen, 50);
           }
@@ -303,7 +303,7 @@ function doInitFirebase() {
               adminTab('auction'); applyAssistantUI(); setTimeout(initCollapsedCards, 300);
             });
           } else {
-            sessionStorage.removeItem('admin_session');
+            localStorage.removeItem('admin_session');
             if (window.goScreen) goScreen('screen-login');
             setTimeout(resetLoginScreen, 50);
           }
@@ -315,7 +315,7 @@ function doInitFirebase() {
             if (window.goScreen) goScreen('screen-admin');
             adminTab('auction'); applyAssistantUI(); setTimeout(initCollapsedCards, 300);
           } else {
-            sessionStorage.removeItem('admin_session');
+            localStorage.removeItem('admin_session');
             if (window.goScreen) goScreen('screen-login');
             setTimeout(resetLoginScreen, 50);
           }
@@ -323,7 +323,7 @@ function doInitFirebase() {
         return;
       }
     } catch(e) {}
-    sessionStorage.removeItem('admin_session');
+    localStorage.removeItem('admin_session');
   }
 
   const session = localStorage.getItem('user_session');
@@ -3153,7 +3153,7 @@ function demoInit() {
   listenPendingRequests();
 
   // استرجاع جلسة المشرف إن وُجدت
-  const adminSession = sessionStorage.getItem('admin_session');
+  const adminSession = localStorage.getItem('admin_session');
   if (adminSession) {
     try {
       const parsed = JSON.parse(adminSession);
@@ -3175,7 +3175,7 @@ function demoInit() {
         return;
       }
     } catch(e) {}
-    sessionStorage.removeItem('admin_session');
+    localStorage.removeItem('admin_session');
   }
 
   // استرجاع جلسة المزايد
@@ -3599,6 +3599,22 @@ function renderAuction(data) {
     ? '<span class="status-pill pill-live"><span class="live-dot"></span>جارية الآن 🔴</span>'
     : isEnded ? '<span class="status-pill pill-ended">انتهت المزايدة ✔️</span>'
     : '<span class="status-pill pill-wait">في انتظار البدء</span>');
+
+  // ── أزرار البدء/الإيقاف (يُصلح حالتهما عند العودة أثناء المزايدة) ──
+  const _btnStart = document.getElementById('btn-start');
+  const _btnStop  = document.getElementById('btn-stop');
+  if (_btnStart && _btnStop) {
+    if (isLive) {
+      _btnStart.disabled = true;
+      _btnStop.disabled  = false;
+    } else if (isEnded || (data && data.status === 'ended')) {
+      _btnStart.disabled = false;
+      _btnStop.disabled  = true;
+    } else {
+      _btnStart.disabled = false;
+      _btnStop.disabled  = true;
+    }
+  }
 
   // ── مؤقت ──
   if (isLive) {
@@ -4123,7 +4139,7 @@ function adminLogin() {
         window._adminCode = stored;
         localStorage.setItem('_adminCode_cache', stored);
         document.getElementById('admin-code-input').value = '';
-        sessionStorage.setItem('admin_session', JSON.stringify({ type:'admin', code }));
+        localStorage.setItem('admin_session', JSON.stringify({ type:'admin', code }));
         showToast('مرحباً بك يا مشرف ✅', 'success');
         goScreen('screen-admin');
         adminTab('auction');
@@ -4145,7 +4161,7 @@ function adminLogin() {
           isAdmin = false; isAssistant = true;
           assistantPerms = snapP.val() || window._assistantPerms || {};
           document.getElementById('admin-code-input').value = '';
-          sessionStorage.setItem('admin_session', JSON.stringify({ type:'assistant', code }));
+          localStorage.setItem('admin_session', JSON.stringify({ type:'assistant', code }));
           showToast('مرحباً بك يا مساعد 👋', 'success');
           goScreen('screen-admin');
           adminTab('auction');
@@ -4163,7 +4179,7 @@ function adminLogin() {
 function adminLogout() {
   _sync();
   isAdmin = false; isAssistant = false; assistantPerms = {};
-  sessionStorage.removeItem('admin_session');
+  localStorage.removeItem('admin_session');
   resetLoginScreen();
   goScreen('screen-login');
 }
@@ -4630,7 +4646,7 @@ function changeAdminCode() {
     window._adminCode = nw;
     localStorage.setItem('_adminCode_cache', nw);
     // تحديث الجلسة الحالية بالرمز الجديد
-    sessionStorage.setItem('admin_session', JSON.stringify({ type: 'admin', code: nw }));
+    localStorage.setItem('admin_session', JSON.stringify({ type: 'admin', code: nw }));
     showToast('✅ تم تغيير رمز المشرف بنجاح', 'success');
     ['cur-code','new-code','con-code'].forEach(id => document.getElementById(id).value = '');
   }).catch(() => showToast('تعذّر التحقق من الرمز، تحقق من الاتصال', 'error'));
@@ -5546,7 +5562,7 @@ function changeAssistantOwnCode() {
       window._fbUpdate('settings', { assistantCode: nw });
       window._assistantCode = nw;
       localStorage.setItem('_assistantCode_cache', nw);
-      sessionStorage.setItem('admin_session', JSON.stringify({ type: 'assistant', code: nw }));
+      localStorage.setItem('admin_session', JSON.stringify({ type: 'assistant', code: nw }));
       ['asst-cur-code','asst-new-code','asst-con-code'].forEach(id => document.getElementById(id).value = '');
       showToast('✅ تم تغيير رمز المساعد بنجاح', 'success');
     });
