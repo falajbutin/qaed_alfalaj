@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2d5a3d"/>
+      <stop offset="100%" style="stop-color:#4a8a5e"/>
+    </linearGradient>
+    <linearGradient id="water" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#6ec6e6;stop-opacity:0.9"/>
+      <stop offset="100%" style="stop-color:#2196a8;stop-opacity:0.95"/>
+    </linearGradient>
+    <linearGradient id="palm" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#a8d5a2"/>
+      <stop offset="100%" style="stop-color:#5aaa6a"/>
+    </linearGradient>
+  </defs>
+
+  <!-- الخلفية الدائرية -->
+  <rect width="512" height="512" rx="110" fill="url(#bg)"/>
+
+  <!-- قناة الفلج (الماء) -->
+  <ellipse cx="256" cy="340" rx="170" ry="22" fill="url(#water)" opacity="0.85"/>
+  <rect x="86" y="310" width="340" height="22" rx="4" fill="url(#water)" opacity="0.7"/>
+
+  <!-- جذع النخلة -->
+  <rect x="242" y="170" width="28" height="160" rx="10" fill="#8B6914"/>
+  <!-- انحناء الجذع -->
+  <path d="M242 290 Q230 240 238 180" stroke="#7a5c10" stroke-width="6" fill="none"/>
+
+  <!-- سعفات النخلة -->
+  <!-- سعفة يمين علوي -->
+  <path d="M256 175 Q310 130 360 100" stroke="#5aaa6a" stroke-width="11" fill="none" stroke-linecap="round"/>
+  <path d="M270 180 Q315 140 355 115" stroke="#a8d5a2" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- سعفة يسار علوي -->
+  <path d="M256 175 Q202 130 152 100" stroke="#5aaa6a" stroke-width="11" fill="none" stroke-linecap="round"/>
+  <path d="M242 180 Q197 140 157 115" stroke="#a8d5a2" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- سعفة يمين -->
+  <path d="M264 185 Q330 165 385 155" stroke="#4d9a5c" stroke-width="10" fill="none" stroke-linecap="round"/>
+  <path d="M264 190 Q325 175 378 168" stroke="#a8d5a2" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.5"/>
+
+  <!-- سعفة يسار -->
+  <path d="M248 185 Q182 165 127 155" stroke="#4d9a5c" stroke-width="10" fill="none" stroke-linecap="round"/>
+  <path d="M248 190 Q187 175 134 168" stroke="#a8d5a2" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.5"/>
+
+  <!-- سعفة أسفل يمين -->
+  <path d="M264 200 Q320 205 365 225" stroke="#3d8a4c" stroke-width="9" fill="none" stroke-linecap="round"/>
+  <!-- سعفة أسفل يسار -->
+  <path d="M248 200 Q192 205 147 225" stroke="#3d8a4c" stroke-width="9" fill="none" stroke-linecap="round"/>
+
+  <!-- تمر النخلة (عناقيد) -->
+  <circle cx="295" cy="210" r="9" fill="#c8902a" opacity="0.9"/>
+  <circle cx="310" cy="220" r="8" fill="#d4a030" opacity="0.85"/>
+  <circle cx="220" cy="210" r="9" fill="#c8902a" opacity="0.9"/>
+  <circle cx="205" cy="220" r="8" fill="#d4a030" opacity="0.85"/>
+
+  <!-- موجات الماء في القناة -->
+  <path d="M110 322 Q170 316 230 322 Q290 328 350 322 Q390 318 406 322" stroke="white" stroke-width="2.5" fill="none" opacity="0.4" stroke-linecap="round"/>
+  <path d="M120 332 Q180 326 240 332 Q300 338 360 332 Q390 328 400 332" stroke="white" stroke-width="2" fill="none" opacity="0.3" stroke-linecap="round"/>
+
+  <!-- النص العربي "قعد الفلج" في الأسفل -->
+  <text x="256" y="410" text-anchor="middle" font-family="'Segoe UI', Tahoma, Arial, sans-serif"
+        font-size="46" font-weight="900" fill="white" opacity="0.95" letter-spacing="1">قعد الفلج</text>
+
+  <!-- إطار ذهبي خفيف -->
+  <rect x="3" y="3" width="506" height="506" rx="108" fill="none" stroke="#f0c060" stroke-width="4" opacity="0.3"/>
+</svg>
