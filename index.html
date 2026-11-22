@@ -4254,6 +4254,12 @@ function adminStartAuction() {
     return;
   }
 
+  // استعادة currentIndex من Firebase دائماً قبل أي عملية حساب
+  if (currentData && currentData.currentIndex != null) {
+    currentIndex = currentData.currentIndex;
+    window.currentIndex = currentIndex;
+  }
+
   // إذا انتهى الربع السابق أو تم حفظ فائز → تقدّم للربع التالي
   // ended = توقف المزاد، idle+winnerSaved = تم حفظ فائز وإغلاق النافذة
   const prevStatus  = currentData ? currentData.status : null;
@@ -4262,7 +4268,8 @@ function adminStartAuction() {
   if (shouldAdvance) {
     const nextIdx = currentIndex + 1;
     if (nextIdx < auctionSequence.length) {
-      currentIndex = nextIdx; // window.currentIndex يتحدث تلقائياً عبر getter/setter
+      currentIndex = nextIdx;
+      window.currentIndex = currentIndex;
     } else {
       // لا يوجد ربع تالٍ → انتهت المزايدة
       showToast('🌙 انتهت جميع الربوع — ابدأ يوماً جديداً', 'warn');
