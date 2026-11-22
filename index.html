@@ -5769,20 +5769,40 @@ async function migrateOldRecords() {
    BACKUP / RESTORE / EXCEL
 ══════════════════════════════════════════ */
 async function exportBackupJSON() {
-  // جاري المعالجة — تصدير mockState
   const statusEl = document.getElementById('backup-status');
+  if (statusEl) statusEl.textContent = '⏳ جاري قراءة البيانات من Firebase...';
   try {
-    const data = { mockState, allBiddersData, auctionSequence };
-    const json = JSON.stringify(data, null, 2);
+    // قراءة كل البيانات مباشرة من Firebase لضمان النسخة الكاملة
+    const [snapRoot, snapBidders, snapSettings] = await Promise.all([
+      window._fbGet('history'),
+      window._fbGet('bidders'),
+      window._fbGet('settings')
+    ]);
+    const snapAdmin = await window._fbGet('adminCode');
+
+    const fullData = {
+      exportDate:    new Date().toISOString(),
+      appVersion:   '1.0',
+      history:      snapRoot.val()    || {},
+      bidders:      snapBidders.val() || {},
+      settings:     snapSettings.val()|| {},
+      adminCode:    snapAdmin.val()   || null,
+      auctionSequence: window.auctionSequence || auctionSequence,
+    };
+
+    const json = JSON.stringify(fullData, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
-    const d    = new Date().toISOString().slice(0,10);
-    a.href = url; a.download = `demo_backup_${d}.json`;
-    a.click(); URL.revokeObjectURL(url);
-    if (statusEl) statusEl.textContent = `✅ تم التحميل — ${d}`;
+    const d    = new Date().toISOString().slice(0,10).replace(/-/g,'');
+    a.href = url; a.download = `falaj_backup_${d}.json`;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+    if (statusEl) statusEl.innerHTML = `✅ تم تحميل النسخة بتاريخ ${new Date().toLocaleDateString('ar-OM')}`;
+    showToast('✅ تم تحميل النسخة الاحتياطية', 'success');
   } catch(e) {
     if (statusEl) statusEl.textContent = '❌ فشل: ' + e.message;
+    showToast('❌ فشل تصدير النسخة: ' + e.message, 'error');
   }
 }
 
@@ -5794,12 +5814,27 @@ function previewRestore(input) {
   reader.onload = e => {
     try {
       restoreData = JSON.parse(e.target.result);
-      const preview = document.getElementById('restore-preview');
+      const preview    = document.getElementById('restore-preview');
       const confirmBtn = document.getElementById('restore-confirm-btn');
-      const keys = Object.keys(restoreData);
-      preview.innerHTML = `<strong>محتوى الملف:</strong><br>${keys.map(k=>
-        `• ${k}: ${typeof restoreData[k] === 'object' ? Object.keys(restoreData[k]||{}).length+' سجل' : restoreData[k]}`
-      ).join('<br>')}`;
+
+      // حساب الأرقام
+      const historyCount = Object.keys(restoreData.history || restoreData.mockState?.history || {}).length;
+      const biddersCount = Object.keys(restoreData.bidders || restoreData.allBiddersData || {}).length;
+      const exportDate   = restoreData.exportDate
+        ? new Date(restoreData.exportDate).toLocaleDateString('ar-OM', {year:'numeric',month:'long',day:'numeric'})
+        : 'غير محدد';
+      const hasAdmin     = !!(restoreData.adminCode || restoreData.settings?.adminCode);
+      const plotsCount   = (restoreData.auctionSequence || []).length;
+
+      preview.innerHTML = `
+        <div style="font-weight:800;margin-bottom:8px;color:var(--sage-dk)">📋 محتوى النسخة الاحتياطية:</div>
+        <div style="display:grid;gap:5px">
+          <div>📅 تاريخ النسخة: <strong>${exportDate}</strong></div>
+          <div>📂 سجلات تاريخية: <strong>${historyCount} يوم</strong></div>
+          <div>👥 المزايدون: <strong>${biddersCount} مزايد</strong></div>
+          <div>🌴 الربوع: <strong>${plotsCount ? plotsCount + ' ربع' : 'غير مضمّنة'}</strong></div>
+          <div>🔑 رمز المشرف: <strong>${hasAdmin ? 'مضمّن' : 'غير مضمّن'}</strong></div>
+        </div>`;
       preview.style.display = 'block';
       confirmBtn.style.display = '';
     } catch(err) {
@@ -5816,16 +5851,60 @@ async function confirmRestore() {
     '⚠️ تأكيد الاسترجاع',
     'سيتم استبدال جميع بيانات قاعدة البيانات الحالية بالنسخة المحفوظة. هذا الإجراء لا يمكن التراجع عنه.',
     async () => {
+      const statusEl = document.getElementById('backup-status');
       try {
-        // جاري المعالجة — استيراد mockState
-        if (restoreData.mockState) Object.assign(mockState, restoreData.mockState);
-        if (restoreData.allBiddersData) Object.assign(allBiddersData, restoreData.allBiddersData);
-        showToast('✅ تم استرجاع النسخة (تجريبي)', 'success');
+        if (statusEl) statusEl.textContent = '⏳ جاري الاسترجاع إلى Firebase...';
+        showToast('⏳ جاري الاسترجاع...', 'info');
+
+        const writes = [];
+
+        // استرجاع السجل التاريخي
+        const history = restoreData.history || restoreData.mockState?.history || null;
+        if (history) writes.push(window._fbSet('history', history));
+
+        // استرجاع المزايدين
+        const bidders = restoreData.bidders || restoreData.allBiddersData || null;
+        if (bidders) writes.push(window._fbSet('bidders', bidders));
+
+        // استرجاع الإعدادات
+        const settings = restoreData.settings || restoreData.mockState?.settings || null;
+        if (settings) writes.push(window._fbSet('settings', settings));
+
+        // استرجاع رمز المشرف إن وُجد
+        if (restoreData.adminCode) {
+          writes.push(window._fbSet('adminCode', restoreData.adminCode));
+          localStorage.setItem('_adminCode_cache', restoreData.adminCode);
+        }
+
+        // استرجاع تسلسل الربوع إن وُجد
+        if (restoreData.auctionSequence?.length) {
+          writes.push(window._fbSet('auction/items', restoreData.auctionSequence));
+        }
+
+        await Promise.all(writes);
+
+        // تحديث الذاكرة المحلية
+        if (history)  { if (!window.mockState.history) window.mockState.history = {}; Object.assign(window.mockState.history, history); }
+        if (bidders)  Object.assign(window.allBiddersData || {}, bidders);
+
+        if (statusEl) statusEl.innerHTML = `✅ تم الاسترجاع بنجاح — ${new Date().toLocaleDateString('ar-OM')}`;
+        showToast('✅ تم استرجاع النسخة الاحتياطية بنجاح', 'success');
+
+        // تنظيف واجهة الاسترجاع
         document.getElementById('restore-preview').style.display = 'none';
         document.getElementById('restore-confirm-btn').style.display = 'none';
-        document.getElementById('restore-file-input').value = '';
+        const fi = document.getElementById('restore-file-input');
+        if (fi) fi.value = '';
         restoreData = null;
+
+        // إعادة تحميل البيانات في الواجهة
+        setTimeout(() => {
+          loadFinanceData();
+          loadBiddersList();
+        }, 800);
+
       } catch(err) {
+        if (statusEl) statusEl.textContent = '❌ فشل الاسترجاع: ' + err.message;
         showToast('❌ فشل الاسترجاع: ' + err.message, 'error');
       }
     },
