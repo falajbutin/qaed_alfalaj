@@ -128,6 +128,10 @@ function doInitFirebase() {
     if (val) {
       mockState.auction = val;
       window.currentData = val;
+      // استعادة currentIndex من Firebase عند عودة المشرف
+      if (val.currentIndex != null && window.currentIndex !== val.currentIndex) {
+        window.currentIndex = val.currentIndex;
+      }
       if (window.renderAuction) window.renderAuction(val);
     }
   });
@@ -3697,7 +3701,7 @@ function startMockTimer() {
     updateTimerRing(remSec, currentData.duration || totalSec || 100);
     if (remMs <= 0) {
       stopMockTimer();
-      mockUpdateAuction({ status: 'ended', closed: true });
+      mockUpdateAuction({ status: 'ended', closed: true, currentIndex: window.currentIndex || 0 });
       const _bs = document.getElementById('btn-start');
       const _bp = document.getElementById('btn-stop');
       if (_bs) _bs.disabled = false;
@@ -4276,6 +4280,7 @@ function adminStartAuction() {
     currentBid: null, currentBidder: null, currentBidderPhone: null,
     endsAt: now() + dur * 1000, bids: [], startedAt: Date.now(), closed: false,
     dayStarted: true, winnerSaved: false,
+    currentIndex,  // نحفظ الفهرس الحالي في Firebase
   });
   const _bs1 = document.getElementById('btn-start');
   const _bp1 = document.getElementById('btn-stop');
@@ -4290,7 +4295,7 @@ function adminStopAuction() {
   if (!currentData) return;
   stopMockTimer();
   const isLastPlot = currentIndex >= auctionSequence.length - 1;
-  mockUpdateAuction({ status: 'ended', isLastPlot });
+  mockUpdateAuction({ status: 'ended', isLastPlot, currentIndex });
   const _bs2 = document.getElementById('btn-start');
   const _bp2 = document.getElementById('btn-stop');
   if (_bs2) _bs2.disabled = false;
@@ -4385,7 +4390,7 @@ function adminNextItem() {
   if (currentIndex >= auctionSequence.length - 1) { showToast('هذا آخر ربع في القائمة', 'warn'); return; }
   currentIndex++;
   stopMockTimer();
-  mockUpdateAuction({ status:'idle', plot: auctionSequence[currentIndex], currentBid:null, currentBidder:null, bids:[] });
+  mockUpdateAuction({ status:'idle', plot: auctionSequence[currentIndex], currentBid:null, currentBidder:null, bids:[], currentIndex });
   document.getElementById('btn-start').disabled = false;
   document.getElementById('btn-stop').disabled  = true;
   showToast(`⏭ ${auctionSequence[currentIndex]}`, 'success');
@@ -4396,7 +4401,7 @@ function adminPrevItem() {
   if (currentIndex <= 0) { showToast('هذا أول ربع في القائمة', 'warn'); return; }
   currentIndex--;
   stopMockTimer();
-  mockUpdateAuction({ status:'idle', plot: auctionSequence[currentIndex], currentBid:null, currentBidder:null, bids:[] });
+  mockUpdateAuction({ status:'idle', plot: auctionSequence[currentIndex], currentBid:null, currentBidder:null, bids:[], currentIndex });
   document.getElementById('btn-start').disabled = false;
   document.getElementById('btn-stop').disabled  = true;
   showToast(`⏮ ${auctionSequence[currentIndex]}`, 'success');
