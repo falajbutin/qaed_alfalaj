@@ -30,7 +30,7 @@
   const MOCK_PLOTS = ['ربع الشمال', 'ربع الجنوب', 'ربع الشرق', 'ربع الغرب', 'ربع الوسط'];
   /* حالة المزايدة المحلية */
   window.mockState = {
-    auction: { status: 'idle', plot: null, minStep: 0.2, duration: 100, extend: 0,
+    auction: { status: 'idle', plot: null, minStep: 0.2, duration: 20, extend: 20,
                currentBid: null, currentBidder: null, currentBidderPhone: null,
                endsAt: null, bids: [], dayStarted: false },
     attendance: {}, history: {}, plotIndex: 0,
@@ -415,34 +415,34 @@ window._assistantPerms   = { ..._assistantPerms };  // مشاركة القيم �
   --ivory-border:#ddd5c8;
   --parchment:   #f2ebe0;
 
-  /* Forest (sage-green) */
-  --sage:        #3a6b4a;
-  --sage-mid:    #4e8b62;
-  --sage-lt:     #7ab890;
-  --sage-pale:   #d4ead9;
-  --sage-ghost:  #eef6f0;
+  /* Teal-Green (مائي + أخضر) */
+  --sage:        #3a8278;
+  --sage-mid:    #4a9288;
+  --sage-lt:     #72b8ae;
+  --sage-pale:   #c8e8e4;
+  --sage-ghost:  #eaf6f4;
 
   /* Accent Gold */
   --gold:        #b8893a;
   --gold-lt:     #e8c97a;
   --gold-pale:   #fdf3dc;
 
-  /* Slate (بديل الأزرق — رمادي دافئ) */
-  --water:       #5c6b7a;
-  --water-lt:    #8fa0b0;
-  --water-pale:  #edf0f3;
-  --water-mid:   #4a5a68;
+  /* Water-Teal (مائي فاتح) */
+  --water:       #4a9288;
+  --water-lt:    #8ecfc8;
+  --water-pale:  #e0f4f2;
+  --water-mid:   #3a8278;
 
-  /* Hero — تيل زمردي داكن (Teal) */
-  --hero-bg1:    #1a5555;
-  --hero-bg2:    #124242;
-  --hero-bg3:    #0c2f2f;
-  --hero-glow:   rgba(80,200,190,0.14);
-  --hero-accent: rgba(251,191,36,0.12);
-  --hero-line:   rgba(80,200,190,0.55);
-  --hero-text:   rgba(200,240,238,0.88);
-  --hero-muted:  rgba(150,220,215,0.65);
-  --hero-faint:  rgba(130,205,200,0.45);
+  /* Hero — تيل فاتح مائي (من الصورة) */
+  --hero-bg1:    #72b8ae;
+  --hero-bg2:    #5aa59a;
+  --hero-bg3:    #4a9288;
+  --hero-glow:   rgba(255,255,255,0.22);
+  --hero-accent: rgba(200,240,220,0.18);
+  --hero-line:   rgba(255,255,255,0.60);
+  --hero-text:   rgba(255,255,255,0.95);
+  --hero-muted:  rgba(230,255,250,0.80);
+  --hero-faint:  rgba(200,240,235,0.55);
 
   /* Status */
   --red:         #c0392b;
@@ -485,11 +485,11 @@ window._assistantPerms   = { ..._assistantPerms };  // مشاركة القيم �
   --ivory-border: #2a3330;
   --parchment:    #1e2520;
 
-  --sage:         #7ab890;
-  --sage-mid:     #5fa070;
-  --sage-lt:      #4e8b62;
-  --sage-pale:    #1e3326;
-  --sage-ghost:   #192b1f;
+  --sage:         #8ecfc8;
+  --sage-mid:     #72b8ae;
+  --sage-lt:      #5aa59a;
+  --sage-pale:    #1a3230;
+  --sage-ghost:   #142826;
 
   --gold:         #e8c97a;
   --gold-lt:      #c9a040;
@@ -500,9 +500,9 @@ window._assistantPerms   = { ..._assistantPerms };  // مشاركة القيم �
   --water-pale:   #1e2530;
   --water-mid:    #7a90a0;
 
-  --hero-bg1:     #0f3535;
-  --hero-bg2:     #092828;
-  --hero-bg3:     #061a1a;
+  --hero-bg1:     #5aa59a;
+  --hero-bg2:     #4a9288;
+  --hero-bg3:     #3a7f74;
 
   --text:         #e8ede9;
   --text-mid:     #b0c8b8;
@@ -608,9 +608,10 @@ html, body {
 ══════════════════════════════════════════ */
 #screen-splash {
   align-items: center; justify-content: center;
-  background: radial-gradient(ellipse at 40% 30%, rgba(122,184,144,0.18) 0%, transparent 60%),
-              radial-gradient(ellipse at 70% 80%, rgba(184,137,58,0.12) 0%, transparent 60%),
-              var(--ivory);
+  background:
+    radial-gradient(ellipse at 25% 20%, rgba(255,255,255,0.40) 0%, transparent 50%),
+    radial-gradient(ellipse at 75% 80%, rgba(74,146,136,0.25) 0%, transparent 55%),
+    linear-gradient(145deg, #c8e8e4 0%, #9acdc6 40%, #72b8ae 70%, #8ecfc8 100%);
 }
 .splash-icon {
   width: 120px; height: 120px; border-radius: 32px; overflow: hidden;
@@ -657,12 +658,15 @@ html, body {
 ══════════════════════════════════════════ */
 #screen-role { display: none; } /* legacy — replaced by screen-login */
 #screen-login {
-  background: radial-gradient(ellipse at 25% 15%, rgba(122,184,144,0.18) 0%, transparent 55%),
-              radial-gradient(ellipse at 80% 85%, rgba(184,137,58,0.1) 0%, transparent 55%),
-              var(--ivory);
+  background:
+    radial-gradient(ellipse at 20% 15%, rgba(255,255,255,0.45) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 85%, rgba(74,146,136,0.20) 0%, transparent 55%),
+    linear-gradient(145deg, #c8e8e4 0%, #a0cfc8 40%, #80bab2 70%, #9acdc6 100%);
 }
 #screen-register {
-  background: radial-gradient(ellipse at 30% 20%, rgba(122,184,144,0.12) 0%, transparent 50%), var(--ivory);
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.35) 0%, transparent 50%),
+    linear-gradient(145deg, #c8e8e4 0%, #a0cfc8 50%, #90bdb6 100%);
 }
 .role-body {
   flex: 1; display: flex; flex-direction: column;
@@ -762,9 +766,9 @@ select.field-input { cursor: pointer; }
 .btn:active { transform: scale(.97); }
 .btn:disabled { opacity: .4; pointer-events: none; }
 
-.btn-sage    { background: var(--sage); color: var(--white); box-shadow: 0 4px 14px rgba(58,107,74,0.3); }
+.btn-sage    { background: linear-gradient(135deg, var(--sage) 0%, var(--sage-mid) 100%); color: #fff; box-shadow: 0 4px 14px rgba(58,130,120,0.35); }
 .btn-sage:active { background: var(--sage-mid); }
-.btn-water   { background: var(--water); color: var(--white); box-shadow: 0 4px 14px rgba(92,107,122,0.3); }
+.btn-water   { background: linear-gradient(135deg, var(--water) 0%, var(--water-mid) 100%); color: #fff; box-shadow: 0 4px 14px rgba(58,130,120,0.30); }
 .btn-water:active { background: var(--water-mid); }
 .btn-gold    { background: var(--gold); color: var(--white); box-shadow: 0 4px 14px rgba(184,137,58,0.3); }
 .btn-red     { background: var(--red); color: var(--white); box-shadow: 0 4px 14px rgba(192,57,43,0.25); }
@@ -787,24 +791,25 @@ select.field-input { cursor: pointer; }
 
 /* ══════ BIDDER TOP BAR ══════ */
 .bidder-top-bar {
-  background: linear-gradient(135deg, var(--hero-bg1), var(--hero-bg2)) !important;
-  border-bottom: 1px solid rgba(122,184,144,0.12) !important;
+  background: linear-gradient(135deg, #72b8ae 0%, #5aa59a 60%, #4a9288 100%) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.15) !important;
+  box-shadow: 0 2px 12px rgba(58,130,120,0.25) !important;
 }
-.bidder-bar-title { color: #f0f7f2 !important; }
-.bidder-bar-sub   { color: var(--hero-muted) !important; }
+.bidder-bar-title { color: #fff !important; }
+.bidder-bar-sub   { color: rgba(230,255,250,0.80) !important; }
 .bidder-date-chip {
-  background: rgba(122,184,144,0.12) !important;
-  color: var(--hero-text) !important;
-  border: 1px solid rgba(122,184,144,0.2) !important;
+  background: rgba(255,255,255,0.15) !important;
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,0.25) !important;
 }
 .bidder-bar-action {
-  color: var(--hero-text) !important;
-  border-color: rgba(122,184,144,0.25) !important;
-  background: rgba(122,184,144,0.08) !important;
+  color: #fff !important;
+  border-color: rgba(255,255,255,0.28) !important;
+  background: rgba(255,255,255,0.12) !important;
 }
 .bidder-top-bar .theme-toggle-btn {
-  background: rgba(122,184,144,0.1);
-  border-color: rgba(122,184,144,0.25);
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.28);
 }
 
 /* ══════════════════════════════════════════
@@ -813,7 +818,33 @@ select.field-input { cursor: pointer; }
 .login-body {
   flex: 1; display: flex; flex-direction: column;
   justify-content: center; padding: 20px;
-  background: linear-gradient(160deg, #f0f9f4 0%, #e8f4f0 50%, #f4f0e8 100%);
+  background: linear-gradient(160deg,
+    #c8e8e4 0%,
+    #a8d8d2 30%,
+    #90cbc4 60%,
+    #b0d8d0 85%,
+    #c5e5e0 100%
+  );
+  position: relative;
+  overflow: hidden;
+}
+.login-body::before {
+  content: '';
+  position: absolute;
+  top: -80px; left: -60px;
+  width: 300px; height: 300px;
+  background: radial-gradient(ellipse, rgba(255,255,255,0.35) 0%, transparent 65%);
+  border-radius: 50%;
+  animation: heroGlowPulse 5s ease-in-out infinite;
+}
+.login-body::after {
+  content: '';
+  position: absolute;
+  bottom: -60px; right: -50px;
+  width: 250px; height: 250px;
+  background: radial-gradient(ellipse, rgba(100,200,185,0.25) 0%, transparent 65%);
+  border-radius: 50%;
+  animation: heroGlowPulse 5s ease-in-out infinite reverse;
 }
 /* ── Unified login card ── */
 .login-unified-card {
@@ -915,52 +946,75 @@ select.field-input { cursor: pointer; }
 .ac-currency{ font-size: 10px; color: var(--hero-faint); margin-top: 2px; }
 
 .auction-hero {
-  background: linear-gradient(160deg,
-    var(--hero-bg1) 0%,
-    var(--hero-bg2) 40%,
-    var(--hero-bg3) 100%
+  background: linear-gradient(145deg,
+    #8ecfc8 0%,
+    #72b8ae 25%,
+    #5aa59a 55%,
+    #4a9288 80%,
+    #3f8278 100%
   );
   border-radius: var(--r-xl);
   padding: 12px 14px 10px;
   margin-bottom: 10px;
-  color: var(--white);
+  color: #fff;
   text-align: center;
   position: relative;
   overflow: hidden;
   box-shadow:
-    0 12px 36px rgba(0,0,0,0.30),
-    0 0 0 1px rgba(122,184,144,0.08) inset;
+    0 8px 32px rgba(58,130,120,0.35),
+    0 2px 8px rgba(58,130,120,0.20),
+    0 0 0 1px rgba(255,255,255,0.12) inset;
 }
-/* توهج علوي أخضر */
+/* توهج ضوئي علوي أيسر (من الصورة) */
 .auction-hero::before {
   content: '';
   position: absolute;
-  top: -70px; left: -60px;
-  width: 220px; height: 220px;
-  background: radial-gradient(circle, var(--hero-glow) 0%, transparent 70%);
+  top: -60px; left: -40px;
+  width: 260px; height: 260px;
+  background: radial-gradient(ellipse at 30% 30%, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.08) 40%, transparent 70%);
   border-radius: 50%;
+  animation: heroGlowPulse 4s ease-in-out infinite;
 }
-/* توهج سفلي ذهبي */
+/* بقعة ضوئية سفلية يمينية */
 .auction-hero::after {
   content: '';
   position: absolute;
-  bottom: -50px; right: -40px;
-  width: 180px; height: 180px;
-  background: radial-gradient(circle, var(--hero-accent) 0%, transparent 70%);
+  bottom: -40px; right: -30px;
+  width: 200px; height: 200px;
+  background: radial-gradient(ellipse, rgba(140,220,210,0.22) 0%, transparent 65%);
   border-radius: 50%;
+  animation: heroGlowPulse 4s ease-in-out infinite reverse;
 }
-/* خط ديناميكي أسفل البطاقة */
+@keyframes heroGlowPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.7; transform: scale(1.08); }
+}
+/* موجات SVG في الأسفل */
 .auction-hero .wave-line {
   position: absolute;
   bottom: 0; left: 0; right: 0;
-  height: 3px;
-  background: linear-gradient(90deg,
-    transparent 0%,
-    var(--hero-line) 35%,
-    rgba(251,191,36,0.6) 50%,
-    var(--hero-line) 65%,
-    transparent 100%
-  );
+  height: 28px;
+  overflow: hidden;
+}
+.auction-hero .wave-line::before {
+  content: '';
+  position: absolute;
+  bottom: 0; left: -20%; right: -20%;
+  height: 28px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 28'%3E%3Cpath d='M0,14 C200,28 400,0 600,14 C800,28 1000,0 1200,14 L1200,28 L0,28 Z' fill='rgba(255,255,255,0.15)'/%3E%3C/svg%3E") repeat-x bottom/600px 28px;
+  animation: waveSlide 6s linear infinite;
+}
+.auction-hero .wave-line::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: -20%; right: -20%;
+  height: 18px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 18'%3E%3Cpath d='M0,9 C150,18 350,0 600,9 C850,18 1050,0 1200,9 L1200,18 L0,18 Z' fill='rgba(255,255,255,0.10)'/%3E%3C/svg%3E") repeat-x bottom/400px 18px;
+  animation: waveSlide 4s linear infinite reverse;
+}
+@keyframes waveSlide {
+  from { transform: translateX(0); }
+  to   { transform: translateX(50%); }
 }
 
 .hero-content { position: relative; z-index: 1; }
@@ -1098,6 +1152,11 @@ select.field-input { cursor: pointer; }
 .btn-bid-submit:active {
   transform: scale(.98);
   box-shadow: 0 3px 10px rgba(58,107,74,0.3) !important;
+}
+#bidder-amount::placeholder {
+  color: rgba(160,160,160,0.55);
+  font-weight: 400;
+  font-size: 14px;
 }
 .winner-card {
   background: linear-gradient(135deg, #fffdf5, #fef7e0);
@@ -1423,59 +1482,59 @@ select.field-input { cursor: pointer; }
    ADMIN DARK THEME
 ══════════════════════════════════════════ */
 #screen-admin {
-  background: #f0f4f1;
+  background: #edf6f5;
 }
 #screen-admin .top-bar {
-  background: linear-gradient(135deg, #1e2d22 0%, #2a3d2e 100%);
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-  box-shadow: 0 2px 16px rgba(0,0,0,0.25);
+  background: linear-gradient(135deg, #3a8278 0%, #4a9288 50%, #5aa59a 100%);
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+  box-shadow: 0 2px 16px rgba(58,130,120,0.30);
 }
 #screen-admin .top-bar-title {
-  color: #e8f0ea;
+  color: #fff;
   font-size: 15px; font-weight: 900;
 }
 #screen-admin .top-bar-sub {
-  color: rgba(168,210,175,0.75);
+  color: rgba(230,255,250,0.80);
   font-size: 10px;
 }
 #screen-admin .top-bar-logo {
-  background: rgba(255,255,255,0.1);
-  border: 1.5px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.15);
+  border: 1.5px solid rgba(255,255,255,0.20);
 }
 #screen-admin .top-bar-action {
-  color: rgba(168,210,175,0.85);
-  border-color: rgba(168,210,175,0.25);
-  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.90);
+  border-color: rgba(255,255,255,0.28);
+  background: rgba(255,255,255,0.10);
 }
 #screen-admin .top-bar-action:active {
-  background: rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.20);
 }
 #screen-admin .date-chip {
-  background: rgba(168,210,175,0.12);
-  color: rgba(168,210,175,0.8);
-  border: 1px solid rgba(168,210,175,0.2);
+  background: rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.90);
+  border: 1px solid rgba(255,255,255,0.25);
   font-size: 10px; padding: 4px 10px; border-radius: 20px;
 }
 
 /* ── تبويبات المشرف ── */
 #screen-admin .tab-bar {
-  background: #253529;
-  border-top: 1px solid rgba(255,255,255,0.05);
-  box-shadow: 0 -4px 12px rgba(0,0,0,0.2);
+  background: #2f7570;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 -4px 12px rgba(40,100,95,0.25);
 }
 #screen-admin .tab-btn {
-  color: rgba(168,210,175,0.5);
+  color: rgba(200,240,235,0.55);
   border-top-color: transparent;
   font-size: 9px;
 }
 #screen-admin .tab-btn:hover {
-  color: rgba(168,210,175,0.8);
-  background: rgba(255,255,255,0.04);
+  color: rgba(230,255,250,0.85);
+  background: rgba(255,255,255,0.06);
 }
 #screen-admin .tab-btn.active {
-  color: #a8d2af;
-  border-bottom-color: #6dba7d;
-  background: rgba(109,186,125,0.08);
+  color: #c8f0ea;
+  border-bottom-color: #8ecfc8;
+  background: rgba(142,207,200,0.12);
 }
 #screen-admin .tab-icon { font-size: 16px; }
 
@@ -1500,8 +1559,8 @@ select.field-input { cursor: pointer; }
 
 /* ── أزرار المشرف أكثر حيوية ── */
 #screen-admin .btn-sage {
-  background: linear-gradient(135deg, #3a6b4a, #2d5439);
-  box-shadow: 0 4px 14px rgba(58,107,74,0.35);
+  background: linear-gradient(135deg, #3a8278, #2d6b62);
+  box-shadow: 0 4px 14px rgba(58,130,120,0.38);
 }
 #screen-admin .btn-sage:active { transform: scale(.97); }
 
@@ -1514,16 +1573,16 @@ select.field-input { cursor: pointer; }
   box-shadow: 0 4px 14px rgba(212,160,23,0.35);
 }
 #screen-admin .btn-water {
-  background: linear-gradient(135deg, #2980b9, #1f6391);
-  box-shadow: 0 4px 14px rgba(41,128,185,0.35);
+  background: linear-gradient(135deg, #4a9288, #3a8278);
+  box-shadow: 0 4px 14px rgba(58,130,120,0.35);
 }
 #screen-admin .btn-ghost {
-  background: #f8faf8;
-  border: 1.5px solid #c8d8cc;
-  color: #2a5438;
+  background: #f0f8f7;
+  border: 1.5px solid #b0d8d4;
+  color: #2a6b62;
 }
 #screen-admin .btn-ghost:active {
-  background: #edf4ef;
+  background: #e0f4f2;
 }
 
 /* ── حقول الإدخال ── */
@@ -2220,20 +2279,30 @@ select.field-input { cursor: pointer; }
 
 <!-- ████ SCREEN: BIDDER ████ -->
 <div class="screen" id="screen-bidder">
-  <div class="top-bar bidder-top-bar">
-    <div class="top-bar-brand">
-      <div class="top-bar-logo">
-        <img src="icons/icon-512x512.png" alt="" onerror="this.parentElement.innerHTML='🌴'">
+  <!-- شريط الترحيب -->
+  <div style="background:linear-gradient(90deg,#4a9288,#72b8ae,#8ecfc8,#72b8ae,#4a9288);background-size:200% 100%;color:#fff;text-align:center;padding:8px 12px;font-size:12px;font-weight:700;letter-spacing:.5px;line-height:1.4;position:relative;overflow:hidden;animation:welcomeShimmer 6s linear infinite">
+    🌊 أهلاً وسهلاً بكم في منصة قعد ربوع مياه أفلاج بطين 🌿
+  </div>
+  <style>
+  @keyframes welcomeShimmer {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  </style>
+  <div class="top-bar bidder-top-bar" style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;min-height:52px">
+    <!-- يمين (RTL): شعار + اسم المزايد -->
+    <div style="display:flex;align-items:center;gap:9px;min-width:0;flex:1">
+      <div style="flex-shrink:0;width:36px;height:36px;border-radius:10px;overflow:hidden;background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.22)">
+        <img src="icons/icon-512x512.png" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='🌴'">
       </div>
-      <div>
-        <div class="top-bar-title bidder-bar-title">مزايدة قعد الفلج</div>
-        <div class="top-bar-sub bidder-bar-sub" id="bidder-user-label">—</div>
-      </div>
+      <div id="bidder-user-label" style="font-size:13px;font-weight:800;color:#fff;line-height:1.35;word-break:break-word;text-shadow:0 1px 3px rgba(0,0,0,0.18)">—</div>
     </div>
-    <div style="display:flex;align-items:center;gap:6px">
-      <button class="theme-toggle-btn" id="bidder-theme-btn" onclick="toggleTheme()" title="تبديل الوضع">🌙</button>
-      <span class="date-chip bidder-date-chip" id="today-date"></span>
-      <button class="top-bar-action bidder-bar-action" onclick="bidderLogout()">خروج</button>
+    <!-- يسار (RTL): أزرار -->
+    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-right:8px">
+      <button class="theme-toggle-btn" id="bidder-theme-btn" onclick="toggleTheme()" title="تبديل الوضع" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.28);color:#fff;font-size:14px;width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;cursor:pointer">🌙</button>
+      <span class="date-chip bidder-date-chip" id="today-date" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.25);font-size:10px;padding:4px 8px;border-radius:16px;white-space:nowrap"></span>
+      <button class="top-bar-action bidder-bar-action" onclick="bidderLogout()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.28);color:#fff;font-size:11px;font-weight:700;padding:5px 10px;border-radius:10px;cursor:pointer;white-space:nowrap">خروج</button>
     </div>
   </div>
   <div class="scroll-area">
@@ -2349,19 +2418,49 @@ select.field-input { cursor: pointer; }
     </div>
 
     <!-- منطقة الأزرار (تظهر فقط عند المزايدة الجارية) -->
-    <div class="b-action-area" id="b-action-area" style="display:none">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
-        <button class="quick-btn" id="b-qb1" onclick="unlockAudio();quickBid(parseFloat(document.getElementById('b-qb1').dataset.val||0.2))" data-val="0.2">+0.2</button>
-        <button class="quick-btn" id="b-qb2" onclick="unlockAudio();quickBid(parseFloat(document.getElementById('b-qb2').dataset.val||0.5))" data-val="0.5">+0.5</button>
-        <button class="quick-btn" id="b-qb3" onclick="unlockAudio();quickBid(parseFloat(document.getElementById('b-qb3').dataset.val||1))"   data-val="1">+1</button>
+    <div class="b-action-area" id="b-action-area" style="display:none;padding:0 4px">
+      <!-- عنوان زيادة سريعة -->
+      <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-bottom:10px">
+        <span style="font-size:15px;font-weight:800;color:var(--text)">زيادة سريعة</span>
+        <span style="font-size:18px">⚡</span>
       </div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <input class="field-input" id="bidder-amount" type="number" dir="ltr"
-          placeholder="مبلغ (ر.ع)" min="0" step="0.001"
-          style="flex:0 0 42%;text-align:center;font-weight:700;font-size:16px;border-color:rgba(58,107,74,.15);margin:0;height:48px">
-        <button class="btn btn-bid-submit" id="bid-submit-btn" onclick="unlockAudio();submitBid()" disabled
-          style="flex:1;height:48px;font-size:15px;font-weight:800">🌊 مزايدة</button>
+      <!-- أزرار الزيادة السريعة -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">
+        <button class="quick-btn" id="b-qb1"
+          onclick="unlockAudio();quickBid(parseFloat(document.getElementById('b-qb1').dataset.val||0.4))"
+          data-val="0.4"
+          style="font-size:18px;font-weight:800;padding:18px 8px;border-radius:16px;
+                 background:var(--sage-pale);border:none;color:var(--sage);cursor:pointer">+0.4</button>
+        <button class="quick-btn" id="b-qb2"
+          onclick="unlockAudio();quickBid(parseFloat(document.getElementById('b-qb2').dataset.val||0.3))"
+          data-val="0.3"
+          style="font-size:18px;font-weight:800;padding:18px 8px;border-radius:16px;
+                 background:var(--sage-pale);border:none;color:var(--sage);cursor:pointer">+0.3</button>
+        <button class="quick-btn" id="b-qb3"
+          onclick="unlockAudio();quickBid(parseFloat(document.getElementById('b-qb3').dataset.val||0.2))"
+          data-val="0.2"
+          style="font-size:18px;font-weight:800;padding:18px 8px;border-radius:16px;
+                 background:var(--sage-pale);border:none;color:var(--sage);cursor:pointer">+0.2</button>
       </div>
+      <!-- فاصل -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+        <span style="font-size:12px;color:var(--text-muted);white-space:nowrap">أو أدخل مبلغاً مخصصاً</span>
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+      </div>
+      <!-- حقل الإدخال المخصص -->
+      <input class="field-input" id="bidder-amount" type="number" dir="ltr"
+        placeholder="إضافة ر.ع"
+        min="0" step="0.001"
+        style="width:100%;text-align:center;font-weight:700;font-size:17px;
+               border-color:rgba(58,107,74,.2);margin:0 0 12px 0;height:54px;
+               border-radius:16px;box-sizing:border-box;--ph-color:rgba(180,180,180,0.5)">
+      <!-- زر مزايدة الآن -->
+      <button class="btn btn-bid-submit" id="bid-submit-btn"
+        onclick="unlockAudio();submitBid()" disabled
+        style="width:100%;height:56px;font-size:17px;font-weight:800;border-radius:16px">
+        🌊 مزايدة الآن
+      </button>
     </div>
 
   </div>
@@ -2473,11 +2572,11 @@ select.field-input { cursor: pointer; }
         </div>
         <div class="field" style="margin:0">
           <label class="field-label" style="font-size:10px">المدة (ثانية)</label>
-          <input class="field-input" id="a-duration" type="number" value="100" min="30" dir="ltr" style="padding:10px 8px;text-align:center">
+          <input class="field-input" id="a-duration" type="number" value="20" min="10" dir="ltr" style="padding:10px 8px;text-align:center">
         </div>
         <div class="field" style="margin:0">
           <label class="field-label" style="font-size:10px">التمديد (ثانية)</label>
-          <input class="field-input" id="a-extend" type="number" value="0" min="0" dir="ltr" style="padding:10px 8px;text-align:center">
+          <input class="field-input" id="a-extend" type="number" value="20" min="0" dir="ltr" style="padding:10px 8px;text-align:center">
         </div>
       </div>
       <!-- أزرار البدء والإيقاف -->
@@ -3580,7 +3679,7 @@ function renderAuction(data) {
     // placeholder يُظهر الحد الأدنى المسموح
     const minNext = (Number(data.currentBid)||Number(data.minBid)||0) + minV;
     const bidderAmtEl = document.getElementById('bidder-amount');
-    if (bidderAmtEl) bidderAmtEl.placeholder = minV > 0 ? `إضافة (${minV.toFixed(3)}+) ر.ع` : 'مبلغ الإضافة (ر.ع)';
+    if (bidderAmtEl) bidderAmtEl.placeholder = 'إضافة ر.ع';
     const adminAmtEl = document.getElementById('admin-bid-amount');
     if (adminAmtEl) adminAmtEl.placeholder = minV > 0 ? `إضافة (${minV.toFixed(3)}+) ر.ع` : 'مبلغ الإضافة';
     // تحديث أزرار السريعة من القيم المحفوظة
@@ -3657,7 +3756,7 @@ function renderAuction(data) {
 function updateBidderQuickBtns() {
   // استخدام نفس الـ key الموحّد demo_quickBids
   const saved = JSON.parse(localStorage.getItem('demo_quickBids') || 'null');
-  const vals  = saved ? [Number(saved.b1)||0.2, Number(saved.b2)||0.5, Number(saved.b3)||1] : [0.2, 0.5, 1];
+  const vals  = saved ? [Number(saved.b1)||0.4, Number(saved.b2)||0.3, Number(saved.b3)||0.2] : [0.4, 0.3, 0.2];
   ['b-qb1','b-qb2','b-qb3'].forEach((id, i) => {
     const btn = document.getElementById(id);
     if (!btn) return;
@@ -4444,7 +4543,7 @@ window.adminNewDay = async function() {
     showToast('لا يمكن بدء يوم جديد أثناء مزايدة نشطة', 'error'); return;
   }
   stopMockTimer();
-  const freshAuction = { status:'idle', plot:null, minStep:0.2, duration:100, extend:0, currentBid:null, currentBidder:null, currentBidderPhone:null, endsAt:null, bids:[], dayStarted:false };
+  const freshAuction = { status:'idle', plot:null, minStep:0.2, duration:20, extend:20, currentBid:null, currentBidder:null, currentBidderPhone:null, endsAt:null, bids:[], dayStarted:false };
   mockState.auction    = freshAuction;
   mockState.attendance = {};
   currentData  = freshAuction;
@@ -4902,11 +5001,24 @@ function searchBidderForManualBid(query) {
   if (!query.trim()) { sugBox.style.display = 'none'; return; }
 
   const q = query.trim().toLowerCase();
-  const matches = Object.entries(allBiddersData)
-    .filter(([,b]) => (b.name||'').toLowerCase().includes(q))
-    .slice(0, 8);
+  const src = window.allBiddersData || allBiddersData || {};
 
-  if (!matches.length) { sugBox.style.display = 'none'; return; }
+  // إذا كانت البيانات فارغة اجلبها من Firebase أولاً
+  if (Object.keys(src).length === 0) {
+    window._fbGet('bidders').then(snap => {
+      const data = snap.val() || {};
+      window.allBiddersData = data;
+      allBiddersData = data;
+      searchBidderForManualBid(query); // أعد البحث بعد التحميل
+    });
+    return;
+  }
+
+  const matches = Object.entries(src)
+    .filter(([,b]) => b && typeof b === 'object' && (b.name||'').toLowerCase().includes(q))
+    .slice(0, 10);
+
+  if (!matches.length) { sugBox.innerHTML = ''; sugBox.style.display = 'none'; return; }
 
   sugBox.innerHTML = matches.map(([key, b]) =>
     `<div onclick="selectBidderForManualBid('${(b.name||'').replace(/'/g,'`')}','${b.phone||key}')"
@@ -4922,18 +5034,20 @@ function searchBidderForManualBid(query) {
 }
 
 /* ── بحث المزايد في بطاقة إضافة صنف غير مُرسى ── */
-function searchBidderForManualEntry(query) {
-  _sync();
+function _renderManualEntrySuggestions(query) {
   const sugBox = document.getElementById('manual-entry-suggestions');
-  const phoneInp = document.getElementById('manual-bidder-phone');
   if (!sugBox) return;
-  if (phoneInp) phoneInp.value = '';
   if (!query.trim()) { sugBox.style.display = 'none'; return; }
   const q = query.trim().toLowerCase();
-  const matches = Object.entries(allBiddersData)
-    .filter(([,b]) => (b.name||'').toLowerCase().includes(q))
-    .slice(0, 8);
-  if (!matches.length) { sugBox.style.display = 'none'; return; }
+  const src = window.allBiddersData || allBiddersData || {};
+  const matches = Object.entries(src)
+    .filter(([,b]) => {
+      if (!b || typeof b !== 'object') return false;
+      const name = (b.name || '').toLowerCase();
+      return name.includes(q);
+    })
+    .slice(0, 10);
+  if (!matches.length) { sugBox.innerHTML = ''; sugBox.style.display = 'none'; return; }
   sugBox.innerHTML = matches.map(([key, b]) =>
     `<div onclick="selectBidderForManualEntry('${(b.name||'').replace(/'/g,'`')}','${b.phone||key}')"
       style="padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);
@@ -4945,6 +5059,24 @@ function searchBidderForManualEntry(query) {
     </div>`
   ).join('');
   sugBox.style.display = 'block';
+}
+
+function searchBidderForManualEntry(query) {
+  _sync();
+  const phoneInp = document.getElementById('manual-bidder-phone');
+  if (phoneInp) phoneInp.value = '';
+  const src = window.allBiddersData || allBiddersData || {};
+  // إذا كانت البيانات فارغة اجلبها من Firebase أولاً
+  if (Object.keys(src).length === 0 && query.trim()) {
+    window._fbGet('bidders').then(snap => {
+      const data = snap.val() || {};
+      window.allBiddersData = data;
+      allBiddersData = data;
+      _renderManualEntrySuggestions(query);
+    });
+    return;
+  }
+  _renderManualEntrySuggestions(query);
 }
 function selectBidderForManualEntry(name, phone) {
   const nameInp  = document.getElementById('manual-bidder-name');
@@ -5984,77 +6116,106 @@ async function confirmRestore() {
 }
 
 async function exportExcelSheet(section) {
-  // جاري المعالجة — قراءة من mockState
-  let raw = null;
-  if (section === 'bidders') raw = allBiddersData;
-  else if (section === 'history') raw = flattenHistory(mockState.history);
-  else if (section === 'bids') raw = mockState.history;
-  else if (section === 'items') {
-    raw = {};
-    auctionSequence.forEach((name, i) => { raw['item_'+i] = name; });
-  }
-  if (!raw || !Object.keys(raw).length) { showToast('لا توجد بيانات في هذا القسم (تجريبي)', 'warn'); return; }
-
+  _sync();
+  showToast('⏳ جاري قراءة البيانات...', 'info');
   let rows = [], headers = [];
-
-  if (section === 'bidders') {
-    headers = ['الهاتف','الاسم','مفتاح الدخول','متصل','تاريخ الإنشاء'];
-    Object.entries(raw).forEach(([k,v]) => rows.push([
-      v.phone||k, v.name||'', v.loginKey||'',
-      v.isOnline?'نعم':'لا',
-      v.createdAt ? new Date(v.createdAt).toLocaleDateString('ar-OM') : ''
-    ]));
-  } else if (section === 'history') {
-    headers = ['التاريخ','الربع','الفائز','الهاتف','المبلغ','المدفوع','المتبقي','النوع'];
-    Object.values(raw).forEach(v => rows.push([
-      v.timestamp ? new Date(v.timestamp).toLocaleDateString('ar-OM') : '',
-      v.plot||'', v.winner||'', v.phone||'',
-      Number(v.amount||0).toFixed(3),
-      Number(v.paidAmount||0).toFixed(3),
-      (Number(v.amount||0)-Number(v.paidAmount||0)).toFixed(3),
-      v.isManual ? 'يدوي' : 'مزايدة'
-    ]));
-  } else if (section === 'bids') {
-    headers = ['التاريخ','الربع','المزايد','الهاتف','المبلغ','وقت المزايدة'];
-    Object.entries(raw).forEach(([date, plots]) => {
-      Object.entries(plots||{}).forEach(([plot, bids]) => {
-        Object.values(bids||{}).forEach(b => rows.push([
-          date, plot.replace(/_/g,' '), b.name||'', b.phone||'',
-          Number(b.amount||0).toFixed(3),
-          b.ts ? new Date(b.ts).toLocaleTimeString('ar-OM') : ''
-        ]));
+  const d = new Date().toISOString().slice(0,10);
+  const names = { bidders:'المزايدون', history:'السجلات_المالية', bids:'سجل_المزايدات', items:'الربوع' };
+  try {
+    if (section === 'bidders') {
+      const snap = await window._fbGet('bidders');
+      const raw  = snap.val() || {};
+      if (!Object.keys(raw).length) { showToast('لا توجد بيانات للمزايدين', 'warn'); return; }
+      headers = ['م','الاسم','رقم الهاتف','مفتاح الدخول','تاريخ التسجيل'];
+      let idx = 1;
+      Object.entries(raw).forEach(([k, v]) => {
+        if (!v || typeof v !== 'object') return;
+        rows.push([
+          idx++,
+          v.name  || '',
+          v.phone || k,
+          v.loginKey || '',
+          v.createdAt ? new Date(v.createdAt).toLocaleDateString('ar-SA') : ''
+        ]);
       });
-    });
-  } else if (section === 'items') {
-    headers = ['المفتاح','اسم الربع'];
-    Object.entries(raw).forEach(([k,v]) => rows.push([k, typeof v==='string'?v:(v.name||k)]));
+    } else if (section === 'history') {
+      const snap = await window._fbGet('history');
+      const raw  = snap.val() || {};
+      if (!Object.keys(raw).length) { showToast('لا توجد سجلات مالية', 'warn'); return; }
+      const flat = flattenHistory(raw);
+      if (!Object.keys(flat).length) { showToast('لا توجد سجلات مالية', 'warn'); return; }
+      headers = ['م','التاريخ','الربع','اسم الفائز','رقم الهاتف','المبلغ (ر.ع)','المدفوع (ر.ع)','المتبقي (ر.ع)','نوع الإدخال','ملاحظات'];
+      let idx = 1;
+      const sorted = Object.values(flat).sort((a,b) => {
+        const da = a.dateKey || (a.timestamp ? new Date(a.timestamp).toISOString().slice(0,10) : '');
+        const db = b.dateKey || (b.timestamp ? new Date(b.timestamp).toISOString().slice(0,10) : '');
+        return da.localeCompare(db);
+      });
+      sorted.forEach(v => {
+        const dateStr = v.dateKey ? v.dateKey.replace(/-/g,'/') : (v.timestamp ? new Date(v.timestamp).toLocaleDateString('ar-SA') : '');
+        const amount  = Number(v.amount     || 0);
+        const paid    = Number(v.paidAmount  || 0);
+        const remain  = amount - paid;
+        rows.push([idx++, dateStr, v.plot||'', v.winner||'', v.phone||'',
+          amount.toFixed(3), paid.toFixed(3), remain.toFixed(3),
+          v.isManual ? 'إدخال يدوي' : 'مزايدة', v.notes||'']);
+      });
+    } else if (section === 'bids') {
+      const snap = await window._fbGet('history');
+      const raw  = snap.val() || {};
+      if (!Object.keys(raw).length) { showToast('لا توجد سجلات مزايدات', 'warn'); return; }
+      const flat = flattenHistory(raw);
+      if (!Object.keys(flat).length) { showToast('لا توجد سجلات مزايدات', 'warn'); return; }
+      headers = ['م','التاريخ','الربع','اسم الفائز','رقم الهاتف','مبلغ الرسو (ر.ع)','نوع الإدخال'];
+      let idx = 1;
+      const sorted = Object.values(flat).sort((a,b) => (a.dateKey||'').localeCompare(b.dateKey||''));
+      sorted.forEach(v => {
+        const dateStr = v.dateKey ? v.dateKey.replace(/-/g,'/') : '';
+        rows.push([idx++, dateStr, v.plot||'', v.winner||'', v.phone||'',
+          Number(v.amount||0).toFixed(3), v.isManual ? 'إدخال يدوي' : 'مزايدة']);
+      });
+    } else if (section === 'items') {
+      const snap = await window._fbGet('auction/items');
+      const rawSeq = snap.val();
+      const seq = Array.isArray(rawSeq) ? rawSeq : (window.auctionSequence || auctionSequence || []);
+      if (!seq.length) { showToast('لا توجد ربوع مضافة', 'warn'); return; }
+      headers = ['م','اسم الربع'];
+      seq.forEach((name, i) => rows.push([i+1, typeof name==='string' ? name : (name.name||String(name))]));
+    }
+    if (!rows.length) { showToast('لا توجد بيانات للتصدير', 'warn'); return; }
+    // نستخدم TAB كفاصل بدلاً من الفاصلة لأن Excel يقرأه مباشرة بدون مشاكل BOM
+    const csvLines = [headers, ...rows].map(r =>
+      r.map(cell => {
+        const s = String(cell===null||cell===undefined?'':cell);
+        // نحمي من TAB داخل القيمة
+        return s.replace(/\t/g,' ').replace(/\r?\n/g,' ');
+      }).join('\t')
+    );
+    const BOM = '\uFEFF';
+    const csv = BOM + csvLines.join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = (names[section]||section) + '_' + d + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('✅ تم تصدير ' + (names[section]||section) + ' بنجاح', 'success');
+  } catch (err) {
+    console.error('exportExcelSheet error:', err);
+    showToast('❌ خطأ في التصدير: ' + (err.message||err), 'error');
   }
-
-  /* بناء CSV وتحميله كـ Excel */
-  const BOM = '\uFEFF';
-  const csv = BOM + [headers, ...rows].map(r =>
-    r.map(cell => `"${String(cell||'').replace(/"/g,'""')}"`).join(',')
-  ).join('\n');
-
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  const d    = new Date().toISOString().slice(0,10);
-  const names = {bidders:'المزايدون', history:'السجلات_المالية', bids:'سجل_المزايدات', items:'الربوع'};
-  a.href = url; a.download = `${names[section]}_${d}.csv`;
-  a.click(); URL.revokeObjectURL(url);
-  showToast('✅ تم التصدير بنجاح', 'success');
 }
 
 async function exportBackupExcel() {
-  /* تصدير كل الأقسام في ملف واحد بعدة أوراق — نستخدم CSV منفصلة */
-  showToast('جاري التصدير...', '');
-  await exportExcelSheet('bidders');
-  await new Promise(r => setTimeout(r, 400));
-  await exportExcelSheet('history');
-  await new Promise(r => setTimeout(r, 400));
-  await exportExcelSheet('bids');
-  showToast('✅ تم تصدير جميع الملفات', 'success');
+  showToast('⏳ جاري تصدير جميع الملفات...', 'info');
+  for (const sec of ['history','bidders','items']) {
+    await exportExcelSheet(sec);
+    await new Promise(r => setTimeout(r, 600));
+  }
+  showToast('✅ تم تصدير جميع الملفات بنجاح', 'success');
 }
 
 /* ══════════════════════════════════════════
@@ -6535,62 +6696,164 @@ function saveManualEntry() {
    EXPORT ANNUAL PDF
 ══════════════════════════════════════════ */
 function exportAnnualPDF(year) {
-  const rows = (annualAllYears[year]||[]).sort((a,b) => b.dateKey.localeCompare(a.dateKey));
-  if (!rows.length) { showToast('لا توجد بيانات لهذه السنة', 'warn'); return; }
-  const yearTotal = rows.reduce((s,r) => s+r.total, 0);
+  _sync();
+  showToast('⏳ جاري تجهيز التقرير...', 'info');
 
-  const rowsHtml = rows.map(r =>
-    `<tr>
-      <td style="padding:9px 10px;border:1px solid #eee">
-        ${new Date(r.dateKey+'T12:00:00').toLocaleDateString('ar-OM',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}
-      </td>
-      <td style="padding:9px 10px;border:1px solid #eee;font-weight:800;color:#3a6b4a">
-        ${Number(r.total).toFixed(3)} ر.ع
-      </td>
-    </tr>`
-  ).join('');
+  // ── إذا لم تُحمَّل البيانات بعد، اقرأ من Firebase أولاً ──
+  const hasData = Object.keys(annualRawByDate).length > 0;
+  if (!hasData) {
+    window._fbGet('history').then(snap => {
+      const raw = snap.val() || {};
+      const flat = flattenHistory(raw);
+      // أعد بناء annualRawByDate و annualAllYears
+      const byDate = {};
+      annualRawByDate = {};
+      annualAllYears  = {};
+      Object.entries(flat).forEach(([, item]) => {
+        const dk = item.dateKey || (item.timestamp
+          ? new Date(item.timestamp).toISOString().slice(0,10) : null);
+        if (!dk) return;
+        if (!byDate[dk]) byDate[dk] = 0;
+        byDate[dk] += Number(item.amount) || 0;
+        if (!annualRawByDate[dk]) annualRawByDate[dk] = [];
+        annualRawByDate[dk].push(item);
+      });
+      Object.entries(byDate).forEach(([dk, total]) => {
+        const y = dk.split('-')[0];
+        if (!annualAllYears[y]) annualAllYears[y] = [];
+        annualAllYears[y].push({ dateKey: dk, total });
+      });
+      exportAnnualPDF(year); // أعد الاستدعاء بعد تحميل البيانات
+    }).catch(() => showToast('❌ فشل تحميل البيانات', 'error'));
+    return;
+  }
 
-  const tpl = `<div dir="rtl" style="font-family:Cairo,Tajawal,sans-serif;padding:30px;background:#fff;color:#1e2d22">
-    <div style="text-align:center;border-bottom:3px solid #3a6b4a;padding-bottom:20px;margin-bottom:28px">
-      <h1 style="color:#3a6b4a;margin:0">نظام قعد فلج بطين</h1>
-      <h3 style="color:#555;margin:8px 0">السجل السنوي للمزايدات — ${year}</h3>
-      <p style="color:#8a9e91;font-size:13px">تاريخ الطباعة: ${new Date().toLocaleDateString('ar-OM')}</p>
-    </div>
-    <table style="width:100%;border-collapse:collapse;font-size:13px;text-align:center">
-      <thead>
-        <tr style="background:#3a6b4a;color:white">
-          <th style="padding:10px;border:1px solid #3a6b4a">التاريخ</th>
-          <th style="padding:10px;border:1px solid #3a6b4a">إجمالي اليوم (ر.ع)</th>
-        </tr>
-      </thead>
-      <tbody>${rowsHtml}
-        <tr style="background:#d4ead9;font-weight:900;color:#3a6b4a">
-          <td style="padding:11px 10px;border:1px solid #3a6b4a">إجمالي سنة ${year}</td>
-          <td style="padding:11px 10px;border:1px solid #3a6b4a">${yearTotal.toFixed(3)} ر.ع</td>
-        </tr>
-      </tbody>
-    </table>
-    <div style="margin-top:50px;display:flex;justify-content:space-between;font-size:12px;color:#8a9e91">
-      <div><strong style="color:#3a6b4a">وكيل أفلاج قرية بطين</strong><br><br>التوقيع: ........................</div>
-      <div style="text-align:left">منصة قعد فلج بطين الرقمية</div>
-    </div>
-  </div>`;
+  // ── تجميع كل سجلات السنة بالتفاصيل من annualRawByDate ──
+  const dayRows = (annualAllYears[year]||[]).sort((a,b) => a.dateKey.localeCompare(b.dateKey));
+  if (!dayRows.length) { showToast('لا توجد بيانات لهذه السنة', 'warn'); return; }
 
-  showToast('جاري تجهيز تقرير ' + year + '...', '');
+  // بناء صفوف تفصيلية مرتبة حسب التاريخ ثم الربع
+  const detailRows = [];
+  dayRows.forEach(dayObj => {
+    const dk = dayObj.dateKey;
+    const items = (annualRawByDate[dk] || []);
+    if (!items.length) {
+      detailRows.push({ dateKey: dk, plot: '—', winner: '—', phone: '—', amount: dayObj.total, isManual: false });
+    } else {
+      items.forEach(item => {
+        detailRows.push({
+          dateKey: dk,
+          plot:    item.plot    || '—',
+          winner:  item.winner  || '—',
+          phone:   item.phone   || '—',
+          amount:  Number(item.amount || 0),
+          isManual: item.isManual || false,
+        });
+      });
+    }
+  });
+
+  const yearTotal = dayRows.reduce((s, r) => s + r.total, 0);
+  const printDate = new Date().toLocaleDateString('ar-SA', { year:'numeric', month:'long', day:'numeric' });
+
+  // ── بناء رأس كل صفحة ──
+  const pageHeader = `
+    <div style="text-align:center;border-bottom:3px solid #3a6b4a;padding-bottom:16px;margin-bottom:18px">
+      <h1 style="color:#3a6b4a;margin:0 0 4px 0;font-size:20px">نظام قعد فلج بطين</h1>
+      <h3 style="color:#444;margin:0 0 4px 0;font-size:14px">السجل السنوي للمزايدات — ${year}</h3>
+      <span style="color:#8a9e91;font-size:11px">تاريخ الطباعة: ${printDate}</span>
+    </div>`;
+
+  // ── رأس الجدول يتكرر في كل صفحة ──
+  const tableHeader = `
+    <thead>
+      <tr style="background:#3a6b4a;color:#fff;font-size:12px">
+        <th style="padding:8px 6px;border:1px solid #3a6b4a;text-align:center">م</th>
+        <th style="padding:8px 6px;border:1px solid #3a6b4a;text-align:center">التاريخ</th>
+        <th style="padding:8px 6px;border:1px solid #3a6b4a;text-align:center">الربع</th>
+        <th style="padding:8px 6px;border:1px solid #3a6b4a;text-align:center">اسم الفائز</th>
+        <th style="padding:8px 6px;border:1px solid #3a6b4a;text-align:center">رقم الهاتف</th>
+        <th style="padding:8px 6px;border:1px solid #3a6b4a;text-align:center;min-width:70px">المبلغ (ر.ع)</th>
+        <th style="padding:8px 6px;border:1px solid #3a6b4a;text-align:center">النوع</th>
+      </tr>
+    </thead>`;
+
+  // ── تقسيم الصفوف على صفحات (22 صف لكل صفحة) ──
+  const ROWS_PER_PAGE = 22;
+  const pages = [];
+  for (let i = 0; i < detailRows.length; i += ROWS_PER_PAGE) {
+    pages.push(detailRows.slice(i, i + ROWS_PER_PAGE));
+  }
+
+  const pagesHtml = pages.map((pageRows, pageIdx) => {
+    const isLastPage = pageIdx === pages.length - 1;
+    let rowNum = pageIdx * ROWS_PER_PAGE + 1;
+
+    const tbodyRows = pageRows.map(r => {
+      const dateLabel = r.dateKey
+        ? new Date(r.dateKey + 'T12:00:00').toLocaleDateString('ar-SA', { year:'numeric', month:'2-digit', day:'2-digit' })
+        : '';
+      const bg = rowNum % 2 === 0 ? '#f7fbf8' : '#fff';
+      return `<tr style="background:${bg};font-size:11.5px">
+        <td style="padding:7px 5px;border:1px solid #dde9df;text-align:center;color:#666">${rowNum++}</td>
+        <td style="padding:7px 5px;border:1px solid #dde9df;text-align:center">${dateLabel}</td>
+        <td style="padding:7px 5px;border:1px solid #dde9df;text-align:center;font-weight:700">${r.plot}</td>
+        <td style="padding:7px 5px;border:1px solid #dde9df;text-align:center">${r.winner}</td>
+        <td style="padding:7px 5px;border:1px solid #dde9df;text-align:center;direction:ltr">${r.phone}</td>
+        <td style="padding:7px 5px;border:1px solid #dde9df;text-align:center;font-weight:800;color:#3a6b4a">${r.amount.toFixed(3)}</td>
+        <td style="padding:7px 5px;border:1px solid #dde9df;text-align:center;font-size:10px;color:#666">${r.isManual ? 'يدوي' : 'مزايدة'}</td>
+      </tr>`;
+    }).join('');
+
+    // في الصفحة الأخيرة أضف سطر الإجمالي وخط التوقيع
+    const totalRow = isLastPage ? `
+      <tr style="background:#d4ead9;font-weight:900;color:#1e4a2a;font-size:12px">
+        <td colspan="5" style="padding:10px 8px;border:1px solid #3a6b4a;text-align:center">الإجمالي الكلي لسنة ${year}</td>
+        <td style="padding:10px 8px;border:1px solid #3a6b4a;text-align:center">${yearTotal.toFixed(3)}</td>
+        <td style="padding:10px 8px;border:1px solid #3a6b4a;text-align:center">ر.ع</td>
+      </tr>` : '';
+
+    const signature = isLastPage ? `
+      <div style="margin-top:40px;display:flex;justify-content:space-between;font-size:11px;color:#666">
+        <div><strong style="color:#3a6b4a">وكيل أفلاج قرية بطين</strong><br><br>التوقيع: ...............................&nbsp;&nbsp;&nbsp;التاريخ: ................</div>
+        <div style="text-align:left;color:#aaa">منصة قعد فلج بطين الرقمية</div>
+      </div>` : '';
+
+    const pageNum = `<div style="text-align:center;font-size:10px;color:#aaa;margin-top:8px">صفحة ${pageIdx+1} من ${pages.length}</div>`;
+
+    const pageBreak = pageIdx < pages.length - 1
+      ? 'page-break-after:always;'
+      : '';
+
+    return `<div style="${pageBreak}padding:24px 28px;background:#fff">
+      ${pageHeader}
+      <table style="width:100%;border-collapse:collapse;direction:rtl">
+        ${tableHeader}
+        <tbody>${tbodyRows}${totalRow}</tbody>
+      </table>
+      ${pageNum}
+      ${signature}
+    </div>`;
+  }).join('');
+
+  const tpl = `<div dir="rtl" style="font-family:'Tajawal','Cairo',sans-serif;background:#fff;color:#1e2d22">${pagesHtml}</div>`;
+
+  showToast('⏳ جاري تجهيز تقرير ' + year + '...', '');
   if (typeof html2pdf !== 'undefined') {
     const el = document.createElement('div');
     el.innerHTML = tpl;
     html2pdf().set({
-      margin:[18,18], filename:`السجل_السنوي_${year}.pdf`,
-      image:{type:'jpeg',quality:1},
-      html2canvas:{scale:2,useCORS:true},
-      jsPDF:{unit:'pt',format:'a4',orientation:'portrait'}
+      margin: [0, 0],
+      filename: `السجل_السنوي_${year}.pdf`,
+      image: { type: 'jpeg', quality: 1 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' }
     }).from(el).save()
-      .then(() => showToast('✅ تم تصدير تقرير ' + year, 'success'))
-      .catch(() => showToast('فشل التصدير', 'error'));
+      .then(() => showToast('✅ تم تصدير تقرير سنة ' + year, 'success'))
+      .catch(e => { console.error(e); showToast('❌ فشل التصدير', 'error'); });
   } else {
-    const w = window.open('','_blank');
-    if (w) { w.document.write(tpl); w.document.close(); }
+    const w = window.open('', '_blank');
+    if (w) { w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>' + tpl + '</body></html>'); w.document.close(); }
   }
 }
 
